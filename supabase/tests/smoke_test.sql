@@ -89,6 +89,20 @@ begin
   assert (select player_number from players where id = pid) = '8', 'number updated';
   assert (select player_number from players where name = 'Bea') is null, 'blank number stays null';
 
+  -- Settings save: create a second season with a break, then edit it.
+  r := public.save_season_settings(null,
+    '{"name":"test","start_date":"2030-01-01","end_date":"2030-01-31","training_weekdays":[2,4],"report_weekday":3,"low_attendance_threshold":80}',
+    '[{"name":"Break","start_date":"2030-01-10","end_date":"2030-01-12"}]',
+    array['2030-01-01','2030-01-03']::date[], '{}', '{}', '{}');
+  assert (r->>'added')::int = 2, 'settings added sessions';
+  assert (select training_weekdays from season where id = (r->>'season_id')::uuid) = '{2,4}', 'weekdays saved';
+  assert (select count(*) from season_breaks where season_id = (r->>'season_id')::uuid) = 1, 'break saved';
+  perform public.save_season_settings((r->>'season_id')::uuid,
+    '{"name":"test2","start_date":"2030-01-01","end_date":"2030-01-31","training_weekdays":[2],"report_weekday":3,"low_attendance_threshold":70}',
+    '[]', '{}', '{}', '{}', '{}');
+  assert (select name from season where id = (r->>'season_id')::uuid) = 'test2', 'season updated';
+  assert (select count(*) from season_breaks where season_id = (r->>'season_id')::uuid) = 0, 'break removed';
+
   -- Name validation.
   begin
     insert into players (name) values ('  ');

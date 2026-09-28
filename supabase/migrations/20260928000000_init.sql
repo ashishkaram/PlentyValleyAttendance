@@ -308,6 +308,65 @@ begin
   return jsonb_build_object('added', added, 'deleted', deleted, 'flagged', flagged);
 end $$;
 
+-- Settings (section 7.1): save the season and its breaks and apply the
+-- regeneration plan the app computed for the new settings, in one transaction.
+-- p_season: {"name","start_date","end_date","training_weekdays","report_weekday","low_attendance_threshold"}
+-- p_breaks: [{"id"?: uuid, "name", "start_date", "end_date"}] (breaks not listed are removed)
+create or replace function public.save_season_settings(
+  p_season_id uuid,
+  p_season jsonb,
+  p_breaks jsonb,
+  p_add date[],
+  p_delete uuid[],
+  p_flag uuid[],
+  p_unflag uuid[]
+) returns jsonb language plpgsql set search_path = public as $$
+declare
+  sid uuid := p_season_id;
+  result jsonb;
+begin
+  if sid is null then
+    insert into season (name, start_date, end_date, training_weekdays, report_weekday, low_attendance_threshold)
+    values (
+      p_season->>'name',
+      (p_season->>'start_date')::date,
+      (p_season->>'end_date')::date,
+      array(select jsonb_array_elements_text(p_season->'training_weekdays')::int),
+      (p_season->>'report_weekday')::int,
+      (p_season->>'low_attendance_threshold')::int)
+    returning id into sid;
+  else
+    update season set
+      name = p_season->>'name',
+      start_date = (p_season->>'start_date')::date,
+      end_date = (p_season->>'end_date')::date,
+      training_weekdays = array(select jsonb_array_elements_text(p_season->'training_weekdays')::int),
+      report_weekday = (p_season->>'report_weekday')::int,
+      low_attendance_threshold = (p_season->>'low_attendance_threshold')::int
+    where id = sid;
+    if not found then
+      raise exception 'Season not found';
+    end if;
+  end if;
+
+  delete from season_breaks b
+   where b.season_id = sid
+     and b.id not in (select (x->>'id')::uuid from jsonb_array_elements(p_breaks) x where x->>'id' is not null);
+
+  update season_breaks b set
+    name = x->>'name', start_date = (x->>'start_date')::date, end_date = (x->>'end_date')::date
+  from jsonb_array_elements(p_breaks) x
+  where x->>'id' is not null and b.id = (x->>'id')::uuid and b.season_id = sid;
+
+  insert into season_breaks (season_id, name, start_date, end_date)
+  select sid, x->>'name', (x->>'start_date')::date, (x->>'end_date')::date
+    from jsonb_array_elements(p_breaks) x
+   where x->>'id' is null;
+
+  result := apply_regeneration(sid, p_add, p_delete, p_flag, p_unflag);
+  return result || jsonb_build_object('season_id', sid);
+end $$;
+
 -- FR-03: bulk import. p_ops: [{"kind":"add","name":..,"player_number":..,"active_from":..}
 --                            | {"kind":"update_number","player_id":..,"player_number":..}]
 create or replace function public.import_players(p_ops jsonb)
@@ -338,9 +397,11 @@ revoke all on function public.reactivate_player(uuid, date) from public, anon;
 revoke all on function public.save_attendance(uuid, jsonb) from public, anon;
 revoke all on function public.apply_regeneration(uuid, date[], uuid[], uuid[], uuid[]) from public, anon;
 revoke all on function public.import_players(jsonb) from public, anon;
+revoke all on function public.save_season_settings(uuid, jsonb, jsonb, date[], uuid[], uuid[], uuid[]) from public, anon;
 grant execute on function public.create_player(text, text, date) to authenticated;
 grant execute on function public.deactivate_player(uuid) to authenticated;
 grant execute on function public.reactivate_player(uuid, date) to authenticated;
 grant execute on function public.save_attendance(uuid, jsonb) to authenticated;
 grant execute on function public.apply_regeneration(uuid, date[], uuid[], uuid[], uuid[]) to authenticated;
 grant execute on function public.import_players(jsonb) to authenticated;
+grant execute on function public.save_season_settings(uuid, jsonb, jsonb, date[], uuid[], uuid[], uuid[]) to authenticated;
