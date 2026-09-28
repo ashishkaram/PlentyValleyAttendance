@@ -201,7 +201,11 @@ create policy "manager full access" on public.sessions
 create policy "manager full access" on public.attendance
   for all to authenticated using (public.is_manager()) with check (public.is_manager());
 
+-- Explicit grants (do not rely on the platform auto-exposing new tables).
 revoke all on all tables in schema public from anon;
+grant usage on schema public to authenticated, service_role;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant all on all tables in schema public to service_role;
 
 -- ---------------------------------------------------------------------------
 -- RPC functions (security invoker: RLS applies). Each runs in one transaction

@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { cookieOptions } from "@/lib/supabase/config";
+import { cookieOptions, withSessionMaxAge } from "@/lib/supabase/config";
 
 /** Pages reachable without signing in. */
 const PUBLIC_PATHS = ["/login", "/forgot-password", "/auth/confirm"];
@@ -27,7 +27,7 @@ export async function proxy(request: NextRequest) {
         setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, withSessionMaxAge(options)));
           Object.entries(headers ?? {}).forEach(([k, v]) => response.headers.set(k, v));
         },
       },

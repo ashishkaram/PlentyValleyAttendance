@@ -76,7 +76,7 @@ export function AttendanceForm({
         </Button>
       </div>
 
-      <fieldset>
+      <fieldset className="min-w-0">
         <legend className="sr-only">Attendance</legend>
         <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-300 bg-white">
           {players.map((p) => {
@@ -86,7 +86,7 @@ export function AttendanceForm({
               <li key={p.id} className={`flex items-center gap-2 py-1 pl-3 pr-1 ${status === "present" ? "bg-green-50" : status === "excused" ? "bg-blue-50" : ""}`}>
                 <span className="w-9 shrink-0 text-right font-mono text-lg font-bold text-slate-700">{p.player_number ?? ""}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-lg font-medium" id={`name-${p.id}`}>{p.name}</span>
+                  <span className="block break-words text-lg font-medium leading-tight">{p.name}</span>
                   {notRecorded && !dirty && <span className="text-sm font-semibold text-amber-800">Not recorded</span>}
                 </span>
                 <CheckBox label="Present" playerName={p.name} checked={status === "present"} onChange={() => toggle(p.id, "present")} tone="green" />
@@ -123,13 +123,13 @@ function CheckBox({
 }) {
   const on = tone === "green" ? "border-green-700 bg-green-700 text-white" : "border-blue-700 bg-blue-700 text-white";
   return (
-    <label className={`flex min-h-12 min-w-[5.5rem] cursor-pointer select-none items-center justify-center gap-1.5 rounded-lg border-2 px-2 font-semibold ${checked ? on : "border-slate-400 bg-white text-slate-900"}`}>
+    <label className={`flex min-h-14 w-[4.75rem] shrink-0 cursor-pointer select-none flex-col items-center justify-center gap-0.5 rounded-lg border-2 text-sm font-semibold ${checked ? on : "border-slate-400 bg-white text-slate-900"}`}>
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
         aria-label={`${label}: ${playerName}`}
-        className="h-5 w-5 accent-current"
+        className="h-6 w-6 accent-white"
       />
       {label}
     </label>
