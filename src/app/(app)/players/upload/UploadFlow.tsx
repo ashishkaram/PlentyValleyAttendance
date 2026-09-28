@@ -160,7 +160,7 @@ export function UploadFlow({
             <strong>{plan.skipped.length}</strong> to skip,{" "}
             <strong className={plan.errors.length ? "text-red-800" : ""}>{plan.errors.length}</strong> with errors (not imported).
           </p>
-          <div className="overflow-x-auto">
+          <div tabIndex={0} role="region" aria-label="Preview table (scrolls sideways)" className="overflow-x-auto">
             <table className="w-full min-w-[40rem] border-collapse text-left">
               <thead>
                 <tr className="border-b-2 border-slate-400">

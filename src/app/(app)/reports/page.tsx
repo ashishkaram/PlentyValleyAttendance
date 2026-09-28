@@ -82,7 +82,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
         {report.rows.length === 0 ? (
           <Alert kind="info">No players were in the squad on any session date in this range.</Alert>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-300 bg-white">
+          <div tabIndex={0} role="region" aria-label="Report table (scrolls sideways)" className="overflow-x-auto rounded-xl border border-slate-300 bg-white">
             <table className="w-full min-w-[46rem] border-collapse text-left tabular-nums">
               <caption className="sr-only">
                 Attendance per player for {rangeText(report.range.start, report.range.end)} and season to date
