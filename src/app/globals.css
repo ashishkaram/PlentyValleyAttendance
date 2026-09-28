@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* Light, high-contrast theme for use outdoors (WCAG 2.1 AA). */
+@theme {
+  --color-brand-50: #ecfdf3;
+  --color-brand-100: #d1fadf;
+  --color-brand-600: #067647;
+  --color-brand-700: #05603a;
+  --color-brand-800: #054f31;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* Visible keyboard focus everywhere. */
+:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+@media print {
+  nav, .no-print { display: none !important; }
+}
