@@ -58,11 +58,17 @@ export default async function AttendancePage({ params }: PageProps<"/attendance/
 
   return (
     <>
-      <PageHeader title={formatDisplayDate(date)}>
-        {date === today && <Badge tone="blue">Today</Badge>}
-        {session.source === "manual" && <Badge>Extra session</Badge>}
-        {session.attendance_taken ? <Badge tone="green">Saved</Badge> : <Badge tone="amber">Not taken yet</Badge>}
-      </PageHeader>
+      <PageHeader
+        title={formatDisplayDate(date)}
+        subtitle={
+          <span className="flex flex-wrap items-center gap-1.5">
+            {date === today && <Badge tone="blue">Today</Badge>}
+            {session.source === "manual" && <Badge>Extra session</Badge>}
+            {session.status === "cancelled" ? <Badge tone="red">Cancelled</Badge> : session.attendance_taken ? <Badge tone="green">Saved</Badge> : <Badge tone="amber">Not taken yet</Badge>}
+            <span className="text-sm">{listed.length} player{listed.length === 1 ? "" : "s"} in the squad</span>
+          </span>
+        }
+      />
       <div className="space-y-4">
         {picker}
         {session.needs_review && (
@@ -72,7 +78,7 @@ export default async function AttendancePage({ params }: PageProps<"/attendance/
         )}
         {date > today && <Alert kind="info">This session is in the future.</Alert>}
         {lastEdit && (
-          <p className="text-sm text-slate-700">
+          <p className="text-sm text-slate-600">
             Last edited by {names.get(lastEdit.updated_by ?? "") ?? "unknown"} on {TIME_FMT.format(new Date(lastEdit.updated_at))}
           </p>
         )}

@@ -63,7 +63,7 @@ The e2e tests sign in as `E2E_EMAIL` and change data (they add players and save 
 ### 1. Supabase
 
 1. Create a project in the **Sydney (ap-southeast-2)** region on the **Pro plan** (no pausing over the Christmas break, daily backups included). Check current pricing first.
-2. Apply the schema: `npx supabase link --project-ref <ref>` then `npx supabase db push`.
+2. Apply the schema: `npx supabase link --project-ref <ref>` then `npx supabase db push`. Or, without the CLI, paste each file in `supabase/migrations/` (in name order) into **SQL Editor → New query** and click **Run**.
 3. **Authentication → Sign In / Providers**: turn **off** "Allow new users to sign up". Keep the Email provider on.
 4. **Authentication → URL Configuration**: Site URL = your Vercel URL; add `https://<your-app>/auth/confirm` to the redirect URLs.
 5. **Authentication → Sessions** (Pro): set the inactivity timeout to 30 days (matches the app's 30-day rolling login). Leave refresh-token rotation on.

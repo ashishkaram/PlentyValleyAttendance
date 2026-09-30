@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attendancePercent, computePlayerStats, formatPercent, isLowAttendance, toggleStatus, type SessionForStats } from "../attendance";
+import { attendancePercent, computePlayerStats, countStatuses, formatPercent, isLowAttendance, type SessionForStats } from "../attendance";
 import { expectedSessionDates } from "../sessions";
 import type { ActivePeriod, AttendanceStatus } from "../types";
 import { CHRISTMAS, SEASON_2026 } from "./fixtures";
@@ -100,6 +100,18 @@ describe("computePlayerStats", () => {
     expect(stats).toMatchObject({ held: 2, present: 1, absent: 1, pct: 50 });
   });
 
+  it("injured sessions do not lower the % and are counted separately", () => {
+    // present 6, injured 2, excused 1, absent 1 -> 6/7 = 85.7 -> 86%
+    const att = sequence(first10, ["present", "present", "present", "present", "present", "present", "injured", "injured", "excused", "absent"]);
+    const stats = computePlayerStats(sessions(first10), ALWAYS, att, ALL_SEASON);
+    expect(stats).toMatchObject({ held: 10, present: 6, injured: 2, excused: 1, absent: 1, counted: 7, pct: 86 });
+  });
+
+  it("all sessions injured -> n/a", () => {
+    const att = sequence(first10, Array(10).fill("injured"));
+    expect(computePlayerStats(sessions(first10), ALWAYS, att, ALL_SEASON)).toMatchObject({ injured: 10, counted: 0, pct: null });
+  });
+
   it("all sessions excused -> n/a", () => {
     const att = sequence(first10, Array(10).fill("excused"));
     const stats = computePlayerStats(sessions(first10), ALWAYS, att, ALL_SEASON);
@@ -113,12 +125,8 @@ describe("computePlayerStats", () => {
   });
 });
 
-describe("toggleStatus", () => {
-  it("makes Present and Excused mutually exclusive", () => {
-    expect(toggleStatus("absent", "present")).toBe("present");
-    expect(toggleStatus("excused", "present")).toBe("present");
-    expect(toggleStatus("present", "excused")).toBe("excused");
-    expect(toggleStatus("present", "present")).toBe("absent");
-    expect(toggleStatus("excused", "excused")).toBe("absent");
+describe("countStatuses", () => {
+  it("tallies all four statuses", () => {
+    expect(countStatuses(["present", "present", "absent", "excused", "injured"])).toEqual({ present: 2, absent: 1, excused: 1, injured: 1 });
   });
 });

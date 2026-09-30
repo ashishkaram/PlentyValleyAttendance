@@ -56,7 +56,7 @@ export function SettingsForm({
   return (
     <div className="space-y-4">
       <Card className="space-y-4">
-        <h2 className="text-lg font-semibold">Season</h2>
+        <h2 className="text-base font-semibold">Season</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Name" htmlFor="season-name">
             <input id="season-name" value={season.name} maxLength={50} onChange={(e) => set("name", e.target.value)} className={inputClass} />
@@ -75,7 +75,7 @@ export function SettingsForm({
               const day = i + 1;
               const checked = season.training_weekdays.includes(day);
               return (
-                <label key={day} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border-2 px-3 font-medium ${checked ? "border-brand-700 bg-brand-50" : "border-slate-400 bg-white"}`}>
+                <label key={day} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-3 font-semibold ring-1 ring-inset ${checked ? "bg-brand-50 text-brand-900 ring-brand-600" : "bg-white ring-slate-300"}`}>
                   <input
                     type="checkbox"
                     className="h-5 w-5"
@@ -116,11 +116,11 @@ export function SettingsForm({
       </Card>
 
       <Card className="space-y-3">
-        <h2 className="text-lg font-semibold">Breaks</h2>
+        <h2 className="text-base font-semibold">Breaks</h2>
         <p className="text-slate-700">No sessions are generated on dates inside a break (first and last day included).</p>
         {breaks.length === 0 && <p>No breaks.</p>}
         {breaks.map((b, i) => (
-          <div key={b.id ?? `new-${i}`} className="grid items-end gap-3 rounded-lg bg-slate-100 p-3 sm:grid-cols-[1fr_auto_auto_auto]">
+          <div key={b.id ?? `new-${i}`} className="grid items-end gap-3 rounded-xl bg-slate-50 p-3 ring-1 ring-inset ring-slate-200 sm:grid-cols-[1fr_auto_auto_auto]">
             <Field label="Name" htmlFor={`break-name-${i}`}>
               <input id={`break-name-${i}`} value={b.name} maxLength={100} onChange={(e) => setBreak(i, { name: e.target.value })} className={inputClass} />
             </Field>
@@ -173,8 +173,8 @@ export function SettingsForm({
         </Button>
       ) : (
         plan && (
-          <Card className="space-y-3 border-2 border-brand-700">
-            <h2 className="text-lg font-semibold">Changes to sessions</h2>
+          <Card className="space-y-3 ring-2 ring-brand-600">
+            <h2 className="text-base font-semibold">Changes to sessions</h2>
             {isEmptyPlan(plan) ? (
               <p>No sessions will change.</p>
             ) : (

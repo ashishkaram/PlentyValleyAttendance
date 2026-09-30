@@ -79,7 +79,7 @@ export function UploadFlow({
   if (summary) {
     return (
       <Card className="max-w-lg space-y-3">
-        <h2 className="text-lg font-semibold">Import complete</h2>
+        <h2 className="text-base font-semibold">Import complete</h2>
         <dl className="grid grid-cols-2 gap-2 text-lg">
           <dt>Added</dt><dd className="font-bold">{summary.added}</dd>
           <dt>Updated</dt><dd className="font-bold">{summary.updated}</dd>
@@ -107,7 +107,7 @@ export function UploadFlow({
     <div className="space-y-4">
       <Card className="space-y-4">
         <div>
-          <h2 className="mb-1 text-lg font-semibold">1. Get the template</h2>
+          <h2 className="mb-1 text-base font-semibold">1. Get the template</h2>
           <p className="mb-2 text-slate-700">
             Columns: <strong>Name</strong>, <strong>Player number</strong> (optional), <strong>Active from</strong> (optional, DD/MM/YYYY).
           </p>
@@ -118,7 +118,7 @@ export function UploadFlow({
         </div>
 
         <div>
-          <h2 className="mb-2 text-lg font-semibold">2. Choose the default date</h2>
+          <h2 className="mb-2 text-base font-semibold">2. Choose the default date</h2>
           <Field
             label="Default active-from date for blank rows"
             htmlFor="default_date"
@@ -138,14 +138,14 @@ export function UploadFlow({
         </div>
 
         <div>
-          <h2 className="mb-2 text-lg font-semibold">3. Upload the file</h2>
+          <h2 className="mb-2 text-base font-semibold">3. Upload the file</h2>
           <label htmlFor="file" className="sr-only">Players file (CSV or Excel)</label>
           <input
             id="file"
             type="file"
             accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={(e) => void onFile(e.target.files?.[0])}
-            className="block w-full text-base file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:font-semibold file:text-white"
+            className="block w-full text-base file:mr-3 file:min-h-11 file:rounded-xl file:border-0 file:bg-brand-700 file:px-4 file:font-semibold file:text-white"
           />
           {fileError && <div className="mt-2"><Alert kind="error">{fileError}</Alert></div>}
         </div>
@@ -153,7 +153,7 @@ export function UploadFlow({
 
       {preview && plan && (
         <Card className="space-y-3">
-          <h2 className="text-lg font-semibold">4. Check and import {fileName && <span className="font-normal text-slate-700">({fileName})</span>}</h2>
+          <h2 className="text-base font-semibold">4. Check and import {fileName && <span className="font-normal text-slate-700">({fileName})</span>}</h2>
           <p>
             <strong>{plan.operations.filter((o) => o.kind === "add").length}</strong> to add,{" "}
             <strong>{plan.operations.filter((o) => o.kind === "update_number").length}</strong> to update,{" "}
@@ -163,7 +163,7 @@ export function UploadFlow({
           <div tabIndex={0} role="region" aria-label="Preview table (scrolls sideways)" className="overflow-x-auto">
             <table className="w-full min-w-[40rem] border-collapse text-left">
               <thead>
-                <tr className="border-b-2 border-slate-400">
+                <tr className="border-b border-slate-200 bg-slate-50 text-sm text-slate-700">
                   <th scope="col" className="p-2">Row</th>
                   <th scope="col" className="p-2">Name</th>
                   <th scope="col" className="p-2">Number</th>

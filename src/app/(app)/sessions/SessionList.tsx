@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
-import { Alert, Badge, Button, Card, Field, inputClass } from "@/components/ui";
+import { Alert, Badge, Button, Card, Field, Segmented, inputClass } from "@/components/ui";
 import type { ActionResult } from "@/lib/actionResult";
 import type { SessionRow } from "@/lib/data";
 import { formatDisplayDate } from "@/lib/domain/dates";
@@ -46,27 +46,23 @@ export function SessionList({
       {result && (result.ok ? <Alert kind="success">{result.message}</Alert> : <Alert kind="error">{result.error}</Alert>)}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="group" aria-label="Show" className="inline-flex overflow-hidden rounded-lg border border-slate-500">
-          {(["all", "review"] as const).map((f) => (
-            <button
-              key={f}
-              type="button"
-              aria-pressed={filter === f}
-              onClick={() => setFilter(f)}
-              className={`min-h-11 px-4 font-semibold ${filter === f ? "bg-brand-700 text-white" : "bg-white hover:bg-slate-100"}`}
-            >
-              {f === "all" ? `All (${sessions.length})` : `Needs review (${reviewCount})`}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label="Show"
+          options={[
+            { value: "all", label: `All (${sessions.length})` },
+            { value: "review", label: `Needs review (${reviewCount})` },
+          ]}
+          value={filter}
+          onChange={setFilter}
+        />
       </div>
 
       <AddSessionForm season={season} />
 
       {[...byMonth.entries()].map(([month, rows]) => (
         <section key={month} aria-labelledby={`m-${month}`}>
-          <h2 id={`m-${month}`} className="mb-2 text-lg font-semibold">{monthLabel(rows[0].date)}</h2>
-          <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-300 bg-white">
+          <h2 id={`m-${month}`} className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-600">{monthLabel(rows[0].date)}</h2>
+          <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-slate-200/80">
             {rows.map((s) => (
               <SessionItem key={s.id} session={s} today={today} onResult={setResult} />
             ))}
@@ -89,9 +85,9 @@ function SessionItem({ session: s, today, onResult }: { session: Row; today: str
     });
 
   return (
-    <li className={`px-4 py-3 ${s.needs_review ? "bg-amber-50" : ""} ${s.date === today ? "border-l-4 border-brand-700" : ""}`}>
+    <li className={`px-4 py-3 ${s.needs_review ? "bg-amber-50" : ""} ${s.date === today ? "border-l-4 border-brand-600" : ""}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <Link href={`/attendance/${s.date}`} className="min-w-40 font-semibold text-brand-700 underline">
+        <Link href={`/attendance/${s.date}`} className="min-w-40 font-semibold text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-brand-600">
           {formatDisplayDate(s.date)}
         </Link>
         <div className="flex flex-1 flex-wrap gap-1">

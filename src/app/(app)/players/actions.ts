@@ -151,3 +151,20 @@ export async function importPlayers(
   revalidatePlayers();
   return { ok: true, data: { added, updated, skipped: plan.skipped.length, errors: plan.errors } };
 }
+
+/**
+ * Permanently delete players with their active periods and attendance
+ * history (for mistakes and test data; leavers should be deactivated).
+ */
+export async function deletePlayers(ids: string[]): Promise<ActionResult<{ deleted: number }>> {
+  const { supabase } = await requireManager();
+  const unique = [...new Set(ids)].filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+  if (unique.length === 0) return { ok: false, error: "Choose at least one player." };
+  if (unique.length > 500) return { ok: false, error: "Delete at most 500 players at a time." };
+  const { data, error } = await supabase.from("players").delete().in("id", unique).select("id");
+  if (error) return { ok: false, error: dbErrorMessage(error) };
+  revalidatePlayers();
+  revalidatePath("/sessions");
+  const deleted = data?.length ?? 0;
+  return { ok: true, data: { deleted }, message: `${deleted} player${deleted === 1 ? "" : "s"} deleted.` };
+}

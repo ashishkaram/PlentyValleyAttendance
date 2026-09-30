@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Icon, inputClass } from "@/components/ui";
 import { formatDisplayDate } from "@/lib/domain/dates";
 
 export function SessionPicker({
@@ -18,25 +19,25 @@ export function SessionPicker({
   const go = (date: string) => router.push(`/attendance/${date}`);
 
   return (
-    <div className="no-print flex items-end gap-2">
+    <div className="no-print flex items-center gap-2">
       <button
         type="button"
         disabled={!prev}
         onClick={() => prev && go(prev.date)}
         aria-label="Previous session"
-        className="min-h-11 min-w-11 rounded-lg border border-slate-500 bg-white text-xl font-bold disabled:opacity-40"
+        className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-white text-slate-800 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-40"
       >
-        ‹
+        <Icon name="chevronLeft" />
       </button>
       <div className="flex-1">
-        <label htmlFor="session-picker" className="block text-sm font-medium">
+        <label htmlFor="session-picker" className="sr-only">
           Session
         </label>
         <select
           id="session-picker"
           value={idx >= 0 ? current : ""}
           onChange={(e) => e.target.value && go(e.target.value)}
-          className="block min-h-11 w-full rounded-lg border border-slate-500 bg-white px-3 text-base"
+          className={inputClass}
         >
           {idx === -1 && <option value="">Choose a session…</option>}
           {dates.map((d) => (
@@ -52,9 +53,9 @@ export function SessionPicker({
         disabled={!next}
         onClick={() => next && go(next.date)}
         aria-label="Next session"
-        className="min-h-11 min-w-11 rounded-lg border border-slate-500 bg-white text-xl font-bold disabled:opacity-40"
+        className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-white text-slate-800 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-40"
       >
-        ›
+        <Icon name="chevronRight" />
       </button>
     </div>
   );

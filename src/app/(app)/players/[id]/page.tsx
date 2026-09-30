@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Badge, Card, PageHeader } from "@/components/ui";
+import { Badge, Card, CardTitle, PageHeader } from "@/components/ui";
 import { getSeason, requireManager, type PeriodRow } from "@/lib/data";
 import { sortPeriods, openPeriod } from "@/lib/domain/activePeriods";
 import { addDays, formatDisplayDate, maxDate, todayInMelbourne } from "@/lib/domain/dates";
@@ -26,16 +25,20 @@ export default async function PlayerPage({ params }: PageProps<"/players/[id]">)
 
   return (
     <>
-      <p className="mb-2">
-        <Link href="/players" className="text-brand-700 underline">‹ Players</Link>
-      </p>
-      <PageHeader title={player.name}>
-        {player.is_active ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>}
-      </PageHeader>
+      <PageHeader
+        title={player.name}
+        back={{ href: "/players", label: "Players" }}
+        subtitle={
+          <span className="flex items-center gap-2">
+            {player.is_active ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>}
+            {player.player_number ? `#${player.player_number}` : "No number"}
+          </span>
+        }
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-3 text-lg font-semibold">Details</h2>
+          <CardTitle>Details</CardTitle>
           <EditPlayerForm
             player={player}
             firstPeriod={periods[0] ?? null}
@@ -45,13 +48,13 @@ export default async function PlayerPage({ params }: PageProps<"/players/[id]">)
 
         <div className="space-y-4">
           <Card>
-            <h2 className="mb-3 text-lg font-semibold">Active periods</h2>
+            <CardTitle>Active periods</CardTitle>
             {periods.length === 0 ? (
               <p>No active periods.</p>
             ) : (
               <ul className="space-y-2">
                 {periods.map((p) => (
-                  <li key={p.id} className="rounded-lg bg-slate-100 px-3 py-2">
+                  <li key={p.id} className="rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-inset ring-slate-200">
                     From <strong>{formatDisplayDate(p.start_date)}</strong>
                     {p.end_date ? (
                       <>
@@ -67,7 +70,7 @@ export default async function PlayerPage({ params }: PageProps<"/players/[id]">)
             )}
           </Card>
           <Card>
-            <h2 className="mb-3 text-lg font-semibold">Squad status</h2>
+            <CardTitle>Squad status</CardTitle>
             <StatusControls
               playerId={player.id}
               name={player.name}

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Alert, PageHeader } from "@/components/ui";
 import { getSeason, requireManager } from "@/lib/data";
 import { todayInMelbourne } from "@/lib/domain/dates";
@@ -16,10 +15,7 @@ export default async function UploadPage() {
   const existing = players ?? [];
   return (
     <>
-      <p className="mb-2">
-        <Link href="/players" className="text-brand-700 underline">‹ Players</Link>
-      </p>
-      <PageHeader title="Bulk upload players" />
+      <PageHeader title="Bulk upload players" subtitle="Import the squad from a CSV or Excel file." back={{ href: "/players", label: "Players" }} />
       <UploadFlow
         existing={existing}
         season={{ start_date: season.start_date, end_date: season.end_date }}

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button, Field, inputClass } from "@/components/ui";
+import { Button, Field, Segmented, inputClass } from "@/components/ui";
 import { formatDisplayDate } from "@/lib/domain/dates";
 import type { DateRange } from "@/lib/domain/reports";
 
@@ -27,23 +27,16 @@ export function ReportControls({
   const [end, setEnd] = useState(customRange?.end ?? (today && today < seasonEnd ? today : seasonEnd));
 
   return (
-    <div className="no-print space-y-3 rounded-xl border border-slate-300 bg-white p-3">
-      <div role="group" aria-label="Report type" className="inline-flex overflow-hidden rounded-lg border border-slate-500">
-        {(["week", "range"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            aria-pressed={mode === m}
-            onClick={() => {
-              setMode(m);
-              if (m === "week" && customRange) router.push("/reports");
-            }}
-            className={`min-h-11 px-4 font-semibold ${mode === m ? "bg-brand-700 text-white" : "bg-white hover:bg-slate-100"}`}
-          >
-            {m === "week" ? "Weekly" : "Custom range"}
-          </button>
-        ))}
-      </div>
+    <div className="no-print space-y-4 rounded-2xl bg-white p-4 shadow-card ring-1 ring-slate-200/80">
+      <Segmented
+        label="Report type"
+        options={[{ value: "week", label: "Weekly" }, { value: "range", label: "Custom range" }]}
+        value={mode}
+        onChange={(m) => {
+          setMode(m);
+          if (m === "week" && customRange) router.push("/reports");
+        }}
+      />
 
       {mode === "week" ? (
         <Field label="Report week (Wednesday to Tuesday)" htmlFor="week">

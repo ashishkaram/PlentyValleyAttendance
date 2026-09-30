@@ -42,6 +42,13 @@ begin
   perform public.save_attendance(sid, jsonb_build_array(jsonb_build_object('player_id', pid, 'status', 'excused')));
   assert (select status from attendance where session_id = sid) = 'excused', 'upsert';
   assert (select count(*) from attendance) = 1, 'one row per player/session';
+  perform public.save_attendance(sid, jsonb_build_array(jsonb_build_object('player_id', pid, 'status', 'injured')));
+  assert (select status from attendance where session_id = sid) = 'injured', 'injured allowed';
+  begin
+    perform public.save_attendance(sid, jsonb_build_array(jsonb_build_object('player_id', pid, 'status', 'sick')));
+    raise exception 'unknown status allowed';
+  exception when check_violation then null;
+  end;
 
   -- Deleting a session with attendance is refused (it is flagged instead).
   r := public.apply_regeneration('10000000-0000-0000-0000-000000000001', '{}', array[sid, sid2], '{}', '{}');
@@ -102,6 +109,13 @@ begin
     '[]', '{}', '{}', '{}', '{}');
   assert (select name from season where id = (r->>'season_id')::uuid) = 'test2', 'season updated';
   assert (select count(*) from season_breaks where season_id = (r->>'season_id')::uuid) = 0, 'break removed';
+
+  -- Bulk delete removes players with their periods and attendance.
+  perform public.create_player('Delete Me', null, '2026-09-29');
+  insert into attendance (session_id, player_id, status)
+    select sid, id, 'present' from players where name = 'Delete Me';
+  delete from players where name = 'Delete Me';
+  assert not exists (select 1 from attendance a where not exists (select 1 from players p where p.id = a.player_id)), 'attendance cascaded';
 
   -- Name validation.
   begin

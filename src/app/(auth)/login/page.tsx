@@ -10,7 +10,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { error } = await searchParams;
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold">Log in</h1>
+      <h1 className="mb-4 text-xl font-bold">Log in</h1>
       {error === "link" && (
         <div className="mb-4">
           <Alert kind="error">That link has expired or was already used. Request a new one.</Alert>
@@ -24,7 +24,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           <input id="password" name="password" type="password" autoComplete="current-password" required className={inputClass} />
         </Field>
       </AuthForm>
-      <p className="mt-6 text-center">
+      <p className="mt-5 text-center text-sm">
         <Link href="/forgot-password" className="font-medium text-brand-700 underline">
           Forgot your password?
         </Link>

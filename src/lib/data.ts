@@ -174,6 +174,16 @@ export async function getAttendanceForSessions(
   return rows;
 }
 
+/** Number of attendance records per player id (all seasons). */
+export async function getAttendanceCountsByPlayer(supabase: Supabase): Promise<Map<string, number>> {
+  const rows = await fetchAll<{ player_id: string }>((from, to) =>
+    supabase.from("attendance").select("player_id").order("id").range(from, to),
+  );
+  const counts = new Map<string, number>();
+  for (const r of rows) counts.set(r.player_id, (counts.get(r.player_id) ?? 0) + 1);
+  return counts;
+}
+
 /** Count of attendance rows per session id. */
 export function countBySession(rows: Pick<AttendanceRow, "session_id">[]): Map<string, number> {
   const counts = new Map<string, number>();

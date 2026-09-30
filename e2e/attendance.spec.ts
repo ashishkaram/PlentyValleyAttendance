@@ -1,53 +1,63 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { login, requireCredentials } from "./helpers";
+
+/** Tap a status button in a player's row, as a person would. */
+const mark = (row: Locator, label: "Present" | "Absent" | "Excused" | "Injured") =>
+  row.locator("label", { hasText: label }).click();
 
 test.beforeEach(async ({ page }) => {
   requireCredentials();
   await login(page);
 });
 
-test("attendance form: number and name, exclusive boxes, mark all, save and reopen", async ({ page }) => {
-  // Back-entry of the first session (29 Sep 2026) for the initial squad.
+test("attendance form: four statuses, mark all present, save and reopen", async ({ page }) => {
+  // Back-entry of an early session for the initial squad.
   await page.goto("/attendance/2026-10-01");
   await expect(page.getByRole("heading", { name: "Thu 1 Oct 2026" })).toBeVisible();
 
-  const rows = page.locator("fieldset li");
-  expect(await rows.count()).toBeGreaterThan(0);
+  const groups = page.getByRole("radiogroup");
+  expect(await groups.count()).toBeGreaterThan(3);
 
-  // Clear any excused marks left by an earlier run ("Mark all present" keeps them).
-  const excused = page.getByRole("checkbox", { name: /^Excused:/, checked: true });
-  while ((await excused.count()) > 0) await excused.first().uncheck();
-
+  // Reset to a known state, then mark everyone present.
+  for (let i = 0; i < (await groups.count()); i++) await mark(groups.nth(i), "Absent");
   await page.getByRole("button", { name: "Mark all present" }).click();
-  const firstPresent = rows.first().getByRole("checkbox", { name: /^Present:/ });
-  const firstExcused = rows.first().getByRole("checkbox", { name: /^Excused:/ });
-  await expect(page.getByRole("checkbox", { name: /^Present:/, checked: false })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: /^Present:/, checked: false })).toHaveCount(0);
 
-  // Ticking Excused clears Present.
-  await firstExcused.check();
-  await expect(firstExcused).toBeChecked();
-  await expect(firstPresent).not.toBeChecked();
+  // One of each other status; choosing one clears the previous choice.
+  await mark(groups.nth(0), "Excused");
+  await expect(groups.nth(0).getByRole("radio", { name: /^Present:/ })).not.toBeChecked();
+  await mark(groups.nth(1), "Absent");
+  await mark(groups.nth(2), "Injured");
 
-  // Neither ticked = absent.
-  const second = rows.nth(1);
-  await second.getByRole("checkbox", { name: /^Present:/ }).uncheck();
+  // "Mark all present" keeps excused and injured players.
+  await page.getByRole("button", { name: "Mark all present" }).click();
+  await expect(groups.nth(0).getByRole("radio", { name: /^Excused:/ })).toBeChecked();
+  await expect(groups.nth(2).getByRole("radio", { name: /^Injured:/ })).toBeChecked();
+  await mark(groups.nth(1), "Absent");
 
   await page.getByRole("button", { name: "Save attendance" }).click();
-  await expect(page.getByText(/Attendance saved: \d+ present, 1 excused, 1 absent/)).toBeVisible();
+  await expect(page.getByText(/Attendance saved: \d+ present, 1 absent, 1 excused, 1 injured/)).toBeVisible();
 
   await page.reload();
-  await expect(rows.first().getByRole("checkbox", { name: /^Excused:/ })).toBeChecked();
-  await expect(rows.nth(1).getByRole("checkbox", { name: /^Present:/ })).not.toBeChecked();
-  await expect(rows.nth(2).getByRole("checkbox", { name: /^Present:/ })).toBeChecked();
+  await expect(groups.nth(0).getByRole("radio", { name: /^Excused:/ })).toBeChecked();
+  await expect(groups.nth(1).getByRole("radio", { name: /^Absent:/ })).toBeChecked();
+  await expect(groups.nth(2).getByRole("radio", { name: /^Injured:/ })).toBeChecked();
+  await expect(groups.nth(3).getByRole("radio", { name: /^Present:/ })).toBeChecked();
   await expect(page.getByText(/Last edited by/)).toBeVisible();
+});
+
+test("injured is shown separately in the weekly report and does not lower the %", async ({ page }) => {
+  await page.goto("/reports?week=2026-09-30");
+  await expect(page.getByRole("columnheader", { name: "Injured" }).first()).toBeVisible();
+  await expect(page.getByText("Injured (week)")).toBeVisible();
 });
 
 test("tap targets are at least 44px", async ({ page }) => {
   await page.goto("/attendance/2026-10-01");
-  const boxes = page.locator("fieldset li label");
-  const n = Math.min(await boxes.count(), 6);
-  for (let i = 0; i < n; i++) {
-    const box = await boxes.nth(i).boundingBox();
+  const options = page.getByRole("radiogroup").first().locator("label");
+  await expect(options).toHaveCount(4);
+  for (let i = 0; i < 4; i++) {
+    const box = await options.nth(i).boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
     expect(box!.width).toBeGreaterThanOrEqual(44);
   }

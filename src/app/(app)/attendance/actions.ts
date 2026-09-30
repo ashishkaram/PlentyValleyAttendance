@@ -6,7 +6,7 @@ import { getPlayersWithPeriods, requireManager } from "@/lib/data";
 import { isActiveOn } from "@/lib/domain/activePeriods";
 import type { AttendanceStatus } from "@/lib/domain/types";
 
-const STATUSES: AttendanceStatus[] = ["present", "excused", "absent"];
+const STATUSES: AttendanceStatus[] = ["present", "absent", "excused", "injured"];
 
 /**
  * Save the attendance form (FR-08): one row per player active on the

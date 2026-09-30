@@ -22,12 +22,13 @@ export function isLowAttendance(pct: number | null, threshold: number): boolean 
 }
 
 export interface PlayerStats {
-  /** Recorded sessions she was active for: present + excused + absent. */
+  /** Recorded sessions she was active for: present + absent + excused + injured. */
   held: number;
   present: number;
   excused: number;
+  injured: number;
   absent: number;
-  /** Denominator of the %: present + absent. */
+  /** Denominator of the %: present + absent (excused and injured are not counted). */
   counted: number;
   pct: number | null;
 }
@@ -47,6 +48,7 @@ export function computePlayerStats(
 ): PlayerStats {
   let present = 0;
   let excused = 0;
+  let injured = 0;
   let absent = 0;
   for (const s of sessions) {
     if (!isWithin(s.date, range.start, range.end)) continue;
@@ -56,23 +58,24 @@ export function computePlayerStats(
     if (status === undefined) continue;
     if (status === "present") present++;
     else if (status === "excused") excused++;
+    else if (status === "injured") injured++;
     else absent++;
   }
   const counted = present + absent;
   return {
-    held: present + excused + absent,
+    held: present + excused + injured + absent,
     present,
     excused,
+    injured,
     absent,
     counted,
     pct: attendancePercent(present, counted),
   };
 }
 
-/** Enforce the Present/Excused mutual exclusivity of the form (FR-08). */
-export function toggleStatus(
-  current: AttendanceStatus,
-  box: "present" | "excused",
-): AttendanceStatus {
-  return current === box ? "absent" : box;
+/** Tally statuses, e.g. for the attendance form's summary line. */
+export function countStatuses(statuses: Iterable<AttendanceStatus>): Record<AttendanceStatus, number> {
+  const counts: Record<AttendanceStatus, number> = { present: 0, absent: 0, excused: 0, injured: 0 };
+  for (const s of statuses) counts[s]++;
+  return counts;
 }

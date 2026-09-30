@@ -67,3 +67,12 @@ Choices made where the PRD (v1.1) was silent or needed interpreting. Newest last
 | --- | --- | --- |
 | D35 | Security headers: HSTS, `X-Frame-Options: DENY`, `nosniff`, strict referrer, no camera/mic/location. Pages are `noindex`. | Section 9. |
 | D36 | Light theme only, dark text on light backgrounds, 3px focus rings, ≥44px tap targets; automated axe (WCAG 2.1 AA) checks run in Playwright. | Outdoor readability. |
+
+## Changes before go-live (v1.2)
+
+| # | Decision | Why |
+| --- | --- | --- |
+| D37 | New attendance status **Injured**. Like Excused, it is **not counted** in the %, and is shown as its own column in reports, CSV and PDF. Added by migration `20260929000000_injured_status.sql`. | Manager request. An injured player shouldn't be marked down. |
+| D38 | The attendance form shows four explicit buttons per player (Present / Absent / Excused / Injured). A new form starts with everyone Absent; "Mark all present" keeps players already marked Excused or Injured. | Replaces the two checkboxes where "neither ticked = absent". |
+| D39 | **Bulk delete** on the Players page (Select → tick → Delete). It permanently removes the players, their active periods and their attendance (reports change). The confirm dialog lists each player with their number of attendance records and needs a tick "I understand". It suggests deactivating instead for players who left. | For mistakes and test data; leavers should be deactivated to keep history. |
+| D40 | Visual refresh: white sidebar (desktop) and top bar (mobile) with a PV mark, rounded cards, stat tiles on Home and Reports, player number badges, segmented filters. Still light-only and WCAG 2.1 AA (checked by axe). | Manager request for a more modern, professional look. |

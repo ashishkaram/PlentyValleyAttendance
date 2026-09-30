@@ -71,3 +71,33 @@ test("bulk upload previews rows, flags errors and duplicates, and summarises", a
   await expect(summary).toContainText("Added2");
   await expect(summary).toContainText("Errors2");
 });
+
+test("bulk delete players after confirming", async ({ page }) => {
+  const a = unique("Delete A");
+  const b = unique("Delete B");
+  for (const name of [a, b]) {
+    await page.goto("/players/new");
+    await page.getByLabel("Name").fill(name);
+    await page.getByLabel("Active from").fill("2026-09-29");
+    await page.getByRole("button", { name: "Add player" }).click();
+    await expect(page.getByRole("status")).toContainText(`${name} added`);
+  }
+
+  await page.goto("/players");
+  await page.getByLabel("Search players").fill("Delete ");
+  await page.getByRole("button", { name: "Select", exact: true }).click();
+  await page.getByLabel(`Select ${a}`).check();
+  await page.getByLabel(`Select ${b}`).check();
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Delete 2 players?" });
+  await expect(dialog).toBeVisible();
+  const confirm = dialog.getByRole("button", { name: "Delete 2 players" });
+  await expect(confirm).toBeDisabled();
+  await dialog.getByRole("checkbox").check();
+  await confirm.click();
+
+  await expect(page.getByText("2 players deleted.")).toBeVisible();
+  await page.getByLabel("Search players").fill(a);
+  await expect(page.getByRole("link", { name: new RegExp(a) })).toHaveCount(0);
+});
