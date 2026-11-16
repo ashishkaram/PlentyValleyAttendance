@@ -18,8 +18,10 @@ and everything you enter stays in that browser.
 
 ## Connect Supabase (club login and shared data)
 
-1. Create a Supabase project and run `supabase/migrations/20261116000000_init.sql` in its SQL editor.
-2. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+1. Create a Supabase project and run the files in `supabase/migrations/` in order in its SQL editor.
+   (The `fieldcraft` project, ref `tlezmsczkqagkeyvwsnp`, region ap-southeast-2, already has them applied.)
+2. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+   (the project's publishable key; it is safe in the browser because row-level security protects the data).
 3. In Supabase → Authentication → URL Configuration, set the Site URL to where the app is hosted.
 4. For production, configure a custom SMTP sender; the built-in one is rate-limited.
 
@@ -49,8 +51,9 @@ scripts/test-db.sh       # database: isolation, roles, invites (needs a local Po
 - The "stump to stump" and "full in the powerplay" adjustments do not place a mid-off or mid-on
   in front of a long-off or long-on that is already out.
 - The Batter row offers hand and type only; picking a club player as the batter is not built.
-- The Supabase path is type-checked and its SQL is tested on plain Postgres, but it has not yet
-  been run against a live Supabase project.
+- The schema is applied to the live `fieldcraft` Supabase project and its isolation, role and
+  invite rules were checked there. Signing in through the app against that project has not been
+  tested end to end.
 - One-Day is a separate instance and is not built.
 
 ## Deploy
