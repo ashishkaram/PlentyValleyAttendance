@@ -1,9 +1,11 @@
 # FieldCraft One-Day — Product Requirements Document
 ### Field-map generator for Victorian Premier Cricket Women's — One-Day instance (Grades 1, 2 and 3)
 
-*Prepared for: Ashish | Version 6.0 | 16 November 2026 | Companion document: FieldCraft-PRD-T20.md*
+*Prepared for: Ashish | Version 6.1 | 16 November 2026 | Status: final, pending rule-book confirmation (§10.1) | Companion document: FieldCraft-PRD-T20.md*
 
-> **What changed from v5.0.** FieldCraft is now two instances, one per format: **FieldCraft T20** and **FieldCraft One-Day**. This document is the complete brief for the One-Day instance. Sections 3, 4, 5, 7 and 8 are identical in both documents; sections 2, 6 and 9 are format-specific. v6.0 also (a) replaces the three-bucket line tendency with five line buckets and three length buckets per bowler, (b) falls back to a generic field for the bowling type when a bowler has no data, (c) makes the field-generation algorithm fully deterministic, and (d) corrects the v5.0 errors found in review (spin sides in the QA matrix, mirror-last ordering, undefined swing frame, y-axis sign, bowler/keeper radii, missing base templates).
+> **What changed from v5.0.** FieldCraft is now two instances, one per format: **FieldCraft T20** and **FieldCraft One-Day**. This document is the complete brief for the One-Day instance. Sections 3, 4, 5, 7 and 8 are the same in both documents apart from the T20-only inputs in §2.5; sections 2, 6 and 9 are format-specific. v6.0 also (a) replaces the three-bucket line tendency with five line buckets and three length buckets per bowler, (b) falls back to a generic field for the bowling type when a bowler has no data, (c) makes the field-generation algorithm fully deterministic, and (d) corrects the v5.0 errors found in review (spin sides in the QA matrix, mirror-last ordering, undefined swing frame, y-axis sign, bowler/keeper radii, missing base templates).
+
+> **Added in v6.1:** line and length per phase (§4.2), keeper standing up to medium pace by default (§4.1), an around-the-wicket toggle (§5.3 Step 2), and a fuller Phase 2 list (§8).
 
 > **⚠ Rule-book status: NOT YET VERIFIED.** The VPC rule book could not be opened while writing this document. Every number in §2.1 is a seed value marked `confirmed = false`. Before build sign-off, replace them from the 2026/27 VPC rule book for each grade. The app reads these numbers from configuration (§2.1), so correcting them needs no code change.
 
@@ -134,12 +136,14 @@ One list per club, shared by both instances. A player record does not need an ap
 | Pace band (pace only) | Fast / Fast-medium / Medium | if pace |
 | Swing shape (pace only) | Outswing / Inswing / None — **as it behaves to a right-handed batter** | no, default None |
 | Spin type (spin only) | Off-spin / Leg-spin / Left-arm orthodox / Left-arm wrist-spin | if spin |
-| Keeper stands up | yes / no — default yes for spin, no for pace | no |
+| Keeper stands up | yes / no — default **yes for spin and for Medium pace**, no for Fast and Fast-medium | no |
 
 Spin type fixes the bowling arm (off-spin and leg-spin are right-arm; the two left-arm types are left-arm), so the form sets the arm automatically for spinners.
 
 ### 4.2 Bowling line and length data
-Entered per bowler **per format**, because a bowler's plan in T20 is often different from her plan in a one-day match. This instance reads and writes the **One-Day** set.
+Entered per bowler **per format**, because a bowler's plan in T20 is often different from her plan in a one-day match. This instance reads and writes the **One-Day** sets.
+
+Within a format a bowler can have up to four sets: **Overall**, plus an optional set for each phase — **Powerplay**, **Middle**, **Death** — because where a bowler pitches the new ball is rarely where she pitches it at the death. The edit form shows four tabs. Overall is the one to fill first; a phase tab is filled only when the coach has figures for that phase.
 
 **Line — five percentages, must total 100**
 
@@ -160,7 +164,7 @@ Entered per bowler **per format**, because a bowler's plan in T20 is often diffe
 | Full | Full, including yorkers and half-volleys |
 
 **Entry rules**
-- Line and length are two independent groups. Either group may be filled without the other.
+- Line and length are two independent groups. Either group may be filled without the other, in any set.
 - Within a group it is all or nothing: all five line values, or all three length values.
 - Whole numbers 0–100. The form shows a running total and blocks save unless the group totals exactly 100. A "scale to 100" button rescales proportionally when the total is between 95 and 105.
 - Optional: **balls sampled** (how many deliveries the percentages are based on) and a free-text source note. If balls sampled is entered and is under 30, the map shows a "small sample" marker; the data is still used.
@@ -169,9 +173,10 @@ Entered per bowler **per format**, because a bowler's plan in T20 is often diffe
 ### 4.3 Fallback when data is missing
 Checked separately for line and for length, in this order:
 
-1. Use this bowler's **One-Day** data.
-2. If none, use this bowler's **T20** data and mark the map "using T20 data".
-3. If none, apply no adjustment for that group. The field is the **generic field for the bowling type** (base template plus movement bias, §5.3 Steps 1–2) and the map is marked "generic field — no line/length data".
+1. Use this bowler's **One-Day** set for the **selected phase**.
+2. If none, use her **One-Day Overall** set and mark the map "overall figures".
+3. If none, use her **T20 Overall** set and mark the map "using T20 data".
+4. If none, apply no adjustment for that group. The field is the **generic field for the bowling type** (base template plus movement bias, §5.3 Steps 1–2) and the map is marked "generic field — no line/length data".
 
 A bowler who is not in the player list at all can still be selected through the generic bowler chips (arm, family, pace band or spin type, swing shape). That always produces the generic field.
 
@@ -257,6 +262,8 @@ Every step is expressed batter-relative. A step that cannot find a fielder to mo
 
 (Swing shape is stored as it behaves to a right-hander, so it reverses for a left-hander. "None" defaults to Away because the natural angle across the batter produces outside edges.)
 
+**Around the wicket.** A toggle beside the bowler chips, off by default (over the wicket) and reset when the bowler changes. It changes the table in one case only: a **pace bowler with swing shape None** bowling around the wicket to the **opposite-hand** batter (right-arm to a left-hander, or left-arm to a right-hander) is treated as **In** — the ball is angled in at the batter from wide of the crease. For swing bowlers and spinners the swing or turn decides the movement, so the toggle is recorded in the rationale but does not change the field. (Coach sign-off item, §10.2.)
+
 - **Away:** Attack(pace: 1st slip, 2nd slip, gully, 3rd slip · spin: 1st slip, silly point, short cover).
 - **In:** Attack(pace: short midwicket, leg slip · spin: short leg, leg slip, short midwicket). If the catcher cap blocks this, instead move the squarest slip already in the field to the first free position in that list.
 
@@ -338,8 +345,8 @@ Maximum close-zone fielders (keeper excluded) after all steps:
 Mobile-first, usable one-handed in direct sunlight. Do not rely on colour alone: close, ring and deep fielders use different marker shapes as well as colours, and every fielder has a text label.
 
 1. **Sign in / Create club / Join with invite.**
-2. **Field (home).** Club name in the header with the instance name (One-Day). Chip rows: Grade · Phase · Bowler (club bowlers first, then generic type chips) · Batter (type and hand; club players selectable for intra-club practice) · Modifiers. The map sits directly below and redraws on every change with no "generate" button and no spinner. A **Flip hand** button mirrors the map for the other batter. Under the map: the rationale line and any markers (generic field, using T20 data, small sample, rules unconfirmed). The last selection is remembered per user.
-3. **Players.** List with search. Each bowler row shows a badge: "line + length", "line only", "length only" or "no data". Admin and Coach see Add / Edit; the edit form includes the line and length groups with running totals (§4.2).
+2. **Field (home).** Club name in the header with the instance name (One-Day). Chip rows: Grade · Phase · Bowler (club bowlers first, then generic type chips; Over / Around the wicket toggle) · Batter (type and hand; club players selectable for intra-club practice) · Modifiers. The map sits directly below and redraws on every change with no "generate" button and no spinner. A **Flip hand** button mirrors the map for the other batter. Under the map: the rationale line and any markers (generic field, overall figures, using T20 data, small sample, rules unconfirmed). The last selection is remembered per user.
+3. **Players.** List with search. Each bowler row shows a badge: "line + length", "line only", "length only" or "no data", plus which phases have their own figures. Admin and Coach see Add / Edit; the edit form has Overall / Powerplay / Middle / Death tabs, each with the line and length groups and running totals (§4.2).
 4. **Club** (Admin only). Members, invites, club name.
 5. **Reference.** Read-only glossary of positions, phases and how the engine uses line and length.
 
@@ -358,11 +365,16 @@ Mobile-first, usable one-handed in direct sunlight. Do not rely on colour alone:
 - `profiles` (user_id → auth.users, club_id, role, display_name)
 - `invites` (id, club_id, code, role, expires_at, used_by nullable) — no client access; used only through server functions
 - `players` (id, club_id, name, batting_hand, batting_type, bowls, bowl_arm, bowl_family, pace_band, swing_shape, spin_type, keeper_up, active, updated_by, updated_at)
-- `player_bowling_data` (player_id, club_id, format, line_outside_off, line_off, line_middle, line_leg, line_outside_leg, len_short, len_good, len_full, balls_sampled, source_note, updated_by, updated_at) — primary key (player_id, format); check constraints: each group is all-null or totals 100
+- `player_bowling_data` (player_id, club_id, format, phase_scope, line_outside_off, line_off, line_middle, line_leg, line_outside_leg, len_short, len_good, len_full, balls_sampled, source_note, updated_by, updated_at) — `phase_scope` is one of overall / powerplay / middle / death; primary key (player_id, format, phase_scope); check constraints: each group is all-null or totals 100
 
 **Phase 1 (this brief):** club login and roles (§3), player details with line and length (§4), engine and map for One-Day with grade selection (§2, §5, §6), Field / Players / Club / Reference screens (§7), the QA matrix (§9).
 
-**Phase 2:** drag-to-adjust and saved fields per bowler × phase (stored as right-hander-normalised coordinates with format and grade, mirrored on load); shared history, saved only when a selection has been unchanged for 5 seconds and is not a duplicate of the previous entry; naming fielders from the player list.
+**Phase 2:** drag-to-adjust and saved fields per bowler × phase (stored as right-hander-normalised coordinates with format and grade, mirrored on load); shared history, saved only when a selection has been unchanged for 5 seconds and is not a duplicate of the previous entry; naming fielders from the player list. Also:
+- **Batter scoring zones.** Record an opposition batter's strong areas (straight, square on the leg side, behind square, sweep or lap) and protect those first.
+- **Left-right pair view.** Both fields side by side with a count of fielders who must move when the strike changes.
+- **Bowling plan board.** One row per over, respecting `max_bowler_overs`; each over opens its field.
+- **Share as image.** Export the current map as a picture for the team chat.
+- **CSV import** of line and length figures.
 
 **Phase 3:** separate line/length figures per batter hand; per-ground boundary sizes; multi-club membership.
 
@@ -394,6 +406,10 @@ All rows are automated unit tests on `generateField`, except rows 21–24.
 | 18 | Length 45/40/15, pace | Deep square leg manned |
 | 19 | Length 10/40/50, Middle | Long-on manned |
 | 20 | Bowler with no One-Day data but with T20 data; bowler with neither | First: T20 data used and marker shown. Second: generic field and "generic field" marker |
+| 20a | Bowler with Overall and Death sets; select Death, then Middle | Death uses the Death set with no marker; Middle uses Overall with the "overall figures" marker |
+| 20b | Right-arm pace, swing None, LHB: over the wicket, then around | Over: Away → slip. Around: In → short midwicket |
+| 20c | Right-arm Outswing, any batter, around the wicket | Field identical to over the wicket |
+| 20d | New Medium-pace bowler; new Fast bowler | Keeper drawn up to the stumps for Medium, back for Fast, until edited |
 | 21 | Signed in to Club B, request Club A's `players` and `player_bowling_data` by id through the API | Refused by the database |
 | 22 | Signed in as Player, write to `players` or `player_bowling_data` through the API | Refused by the database |
 | 23 | Signed in as Coach, update own `role` to admin through the API | Refused |
@@ -409,7 +425,7 @@ All rows are automated unit tests on `generateField`, except rows 21–24.
 ## 10. Open questions
 
 1. **Rule book numbers (§2.1, §2.3).** Supply the 2026/27 VPC rule book, or the values for each grade, so the seeds can be confirmed.
-2. **Coach sign-off on cricket content.** The six templates (§6.1), catcher caps (§6.2) and all thresholds (§5.3) are reasonable club-level defaults written for this document, not a Premier coach's judgement. They are configuration, so a coach's corrections need no code change.
+2. **Coach sign-off on cricket content.** The six templates (§6.1), catcher caps (§6.2) and all thresholds (§5.3) are reasonable club-level defaults written for this document, not a Premier coach's judgement. In particular, check whether the Middle and Death templates lean too much on long-on and long-off for the women's game, where more runs come along the ground and behind square; a short fine leg and a squarer deep fielder may serve better. The around-the-wicket rule (§5.3 Step 2) also need a coach's eye. They are configuration, so a coach's corrections need no code change.
 3. **Line per batter hand.** One set of line figures is applied to both right- and left-handers. Is that acceptable for v1?
 4. **Who may edit bowling data.** Currently Admin and Coach only. Should a Captain, or the bowler herself, be allowed?
 5. **Where the percentages come from.** Typed by hand in v1. If the club has scoring-app or video-tagging exports, a CSV import could follow.
