@@ -145,6 +145,13 @@ class Field {
     const list = side === "leg" ? LEG_RING_DONORS : OFF_RING_DONORS;
     return list.find((n) => this.has(n) && !exclude.includes(n));
   }
+  ringCount(side: Side) {
+    return this.set.filter((n) => POS[n].zone === "ring" && sideOf(n) === side).length;
+  }
+  /** A ring donor that does not leave its side of the ring empty. */
+  spareRingDonor(side: Side) {
+    return this.ringCount(side) > 1 ? this.ringDonor(side) : undefined;
+  }
   nearestFreeRing(theta: number) {
     return POSITIONS.filter((p) => p.zone === "ring" && !this.has(p.name)).sort(
       (a, b) => angDiff(a.theta, theta) - angDiff(b.theta, theta),
@@ -188,7 +195,8 @@ class Field {
       return "none";
     }
     const other: Side = sideOf(target) === "off" ? "leg" : "off";
-    const donor = this.ringDonor(other) ?? this.ringDonor(sideOf(target));
+    const donor =
+      this.spareRingDonor(other) ?? this.spareRingDonor(sideOf(target)) ?? this.ringDonor(other) ?? this.ringDonor(sideOf(target));
     if (!donor) {
       this.note(step, `${why}: no ring fielder available to bring in`, true);
       return "none";
@@ -210,7 +218,7 @@ class Field {
     let donor: string | undefined;
     if (this.count("deep") < this.maxDeep) {
       const other: Side = sideOf(target) === "off" ? "leg" : "off";
-      donor = this.firstPresent(CLOSE_DONORS) ?? this.ringDonor(other) ?? this.ringDonor(sideOf(target));
+      donor = this.firstPresent(CLOSE_DONORS) ?? this.spareRingDonor(other) ?? this.spareRingDonor(sideOf(target));
     } else {
       donor = this.deepByExpendability().find(
         (n) => !list.includes(n) && !this.locked.includes(n) && sideOf(n) !== this.shortSide,
@@ -229,7 +237,8 @@ class Field {
 
   /** Shift one ring fielder from one side to a named spot on the other. */
   shiftRing(from: Side, targets: string[], step: string, why: string): boolean {
-    const donor = this.ringDonor(from);
+    // never strip a side of its last ring fielder
+    const donor = this.spareRingDonor(from);
     const target = this.firstFree(targets);
     if (!donor || !target) {
       this.note(step, `${why}: no ring fielder to shift`, true);
@@ -249,6 +258,7 @@ class Field {
       const ring = (s: Side) => this.set.filter((n) => POS[n].zone === "ring" && sideOf(n) === s).length;
       const side: Side = ring("leg") > ring("off") ? "leg" : "off";
       const ex = ["Mid-off", "Mid-on"];
+      // mid-off and mid-on sit either side of the bowler, so this never empties a side
       const donor = this.ringDonor(side, ex) ?? this.ringDonor(side === "leg" ? "off" : "leg", ex);
       if (!donor) continue;
       this.move(donor, need);
@@ -423,8 +433,9 @@ export function generateField(rules: FormatRules, s: Situation, thresholds: Thre
   guard = 0;
   while (f.legCount() > rules.maxLegSide && guard++ < 9) {
     const donor =
-      f.ringDonor("leg") ??
+      f.spareRingDonor("leg") ??
       f.firstPresent(["Leg slip", "Short leg", "Short midwicket"]) ??
+      f.ringDonor("leg") ??
       f.set.filter((n) => sideOf(n) === "leg")[0];
     const to = f.firstFree(["Cover", "Point", "Mid-off", "Extra cover", "Backward point", "Short third man"])!;
     f.move(donor, to);

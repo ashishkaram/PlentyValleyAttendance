@@ -4,6 +4,8 @@ Field-map generator for Victorian Premier Cricket Women's T20 (Grades 1, 2 and 3
 Pick the bowler, batter and phase and get a field map that obeys the playing conditions.
 Built from `docs/fieldcraft/FieldCraft-PRD-T20.md` (v6.2), Phase 1.
 
+![Field screen](docs-screenshot.png)
+
 ## Run it
 
 ```bash
@@ -26,7 +28,7 @@ The first person to sign up creates the club and becomes its Admin. Everyone els
 ## Tests
 
 ```bash
-npm test                 # engine: 36 tests, including a 140,000-combination sweep of the fielding laws
+npm test                 # engine: 37 tests, including a 140,000-combination sweep of the fielding laws
 scripts/test-db.sh       # database: isolation, roles, invites (needs a local Postgres 16+, PGHOST etc.)
 ```
 

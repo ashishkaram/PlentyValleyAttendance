@@ -281,6 +281,8 @@ Each position has a **zone**. Zone, not radius, decides whether a named fielder 
 ### 5.3 Algorithm
 Every step is expressed batter-relative. A step that cannot find a fielder to move, or whose target is already occupied by every option, is **skipped** and recorded as skipped in `firedRules`.
 
+**One rule above the others:** no move may take the last ring fielder from either side of the wicket, unless a fielding law (Step 7) forces it. A step that would do so looks for another donor, and is skipped if there is none.
+
 **Two shared operations**
 - **Attack(list)** — add a close catcher: take the first free position in `list`. Fund it by removing the first ring fielder present from the donor order for the *opposite* side; if that side has no ring fielder, use the same side's donor order. Skipped if the phase's close-catcher cap (§6.2) is already reached.
   - Leg-side donor order: short fine leg, square leg, midwicket, mid-on.

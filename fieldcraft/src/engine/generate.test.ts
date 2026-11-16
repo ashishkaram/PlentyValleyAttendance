@@ -125,9 +125,10 @@ describe("templates and config", () => {
 describe("line and length (rows 15–19)", () => {
   const base = gen({ bowler: pace() });
   it("15: off-channel adds an off-side ring fielder and mans third man or deep point", () => {
-    const f = gen({ bowler: pace(), line: line(40, 20, 20, 10, 10) });
+    const pp = gen({ bowler: pace(), phase: "powerplay" });
+    const f = gen({ bowler: pace(), phase: "powerplay", line: line(40, 20, 20, 10, 10) });
     expect(f.lineTag).toBe("off-channel");
-    expect(count(f, offRing)).toBe(count(base, offRing) + 1);
+    expect(count(f, offRing)).toBe(count(pp, offRing) + 1);
     expect(names(f).some((n) => n === "Third man" || n === "Deep point")).toBe(true);
   });
   it("16: leg-drift adds a leg-side ring fielder and mans fine leg", () => {
@@ -246,6 +247,15 @@ describe("rationale", () => {
   it("names the bowler, hand, phase and what fired", () => {
     const f = gen({ bowler: spin("off"), line: line(40, 22, 20, 10, 8) }, "L");
     expect(f.rationale).toMatch(/^Off-spin to a left-hander, Middle: Turning away → 1st slip added/);
-    expect(f.rationale).toContain("62% off side");
+    expect(f.rationale).toContain("40% wide of off");
+  });
+  it("never leaves a side of the ring empty", () => {
+    for (const hand of ["R", "L"] as Hand[]) for (const phase of PHASES) for (const b of BOWLERS) for (const ln of LINES) {
+      const f = generateField(R, { phase, bowler: b, batter: { hand, type: "technical" }, line: ln, modifiers: { needWickets: true } });
+      if (count(f, legRing) + count(f, offRing) >= 3) {
+        expect(count(f, legRing)).toBeGreaterThan(0);
+        expect(count(f, offRing)).toBeGreaterThan(0);
+      }
+    }
   });
 });
