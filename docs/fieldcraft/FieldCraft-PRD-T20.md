@@ -1,13 +1,13 @@
 # FieldCraft T20 — Product Requirements Document
 ### Field-map generator for Victorian Premier Cricket Women's — T20 instance (Grades 1, 2 and 3)
 
-*Prepared for: Ashish | Version 6.1 | 16 November 2026 | Status: final, pending rule-book confirmation (§10.1) | Companion document: FieldCraft-PRD-OneDay.md*
+*Prepared for: Ashish | Version 6.2 | 16 November 2026 | Status: final — playing conditions confirmed against the VPC rule book | Companion document: FieldCraft-PRD-OneDay.md*
 
 > **What changed from v5.0.** FieldCraft is now two instances, one per format: **FieldCraft T20** and **FieldCraft One-Day**. This document is the complete brief for the T20 instance. Sections 3, 4, 5, 7 and 8 are the same in both documents apart from the T20-only inputs in §2.5; sections 2, 6 and 9 are format-specific. v6.0 also (a) replaces the three-bucket line tendency with five line buckets and three length buckets per bowler, (b) falls back to a generic field for the bowling type when a bowler has no data, (c) makes the field-generation algorithm fully deterministic, and (d) corrects the v5.0 errors found in review (spin sides in the QA matrix, mirror-last ordering, undefined swing frame, y-axis sign, bowler/keeper radii, missing base templates).
 
 > **Added in v6.1:** line and length per phase (§4.2), keeper standing up to medium pace by default (§4.1), an around-the-wicket toggle (§5.3 Step 2), a short-boundary input and a death-over ball plan (§2.5), and a fuller Phase 2 list (§8).
 
-> **⚠ Rule-book status: NOT YET VERIFIED.** The VPC rule book could not be opened while writing this document. Every number in §2.1 is a seed value marked `confirmed = false`. Before build sign-off, replace them from the 2026/27 VPC rule book for each grade. The app reads these numbers from configuration (§2.1), so correcting them needs no code change.
+> **Rule-book status: confirmed (v6.2).** The numbers in §2.1 and §2.3 are taken from the Cricket Victoria *Rules of Premier Cricket* supplied on 16 November 2026 (the edition carrying the Season 2026/27 policies); each carries its rule number. They remain configuration (§2.1), so a future rule change needs no code change. The rule book changed the T20 design: the powerplay is overs 1–4, and there is a two-over floating Power Surge (§2.1, §2.2).
 
 ---
 
@@ -33,41 +33,64 @@ A captain or coach picks the bowler, the batter and the match phase and immediat
 
 ## 2. T20 format rules
 
-### 2.1 Playing conditions per grade (configuration, seeded, unconfirmed)
+### 2.1 Playing conditions per grade (configuration, confirmed from the rule book)
 
 Stored in `format_rules`, one row per (format, grade). The grade chip in the selector chooses the row.
 
-| Setting | Grade 1 (Firsts) | Grade 2 (Seconds) | Grade 3 (Thirds) |
-|---|---|---|---|
-| Overs per innings | 20 | 20 | 20 |
-| Powerplay overs | 1–6 | 1–6 | 1–6 |
-| Middle overs | 7–16 | 7–16 | 7–16 |
-| Death overs | 17–20 | 17–20 | 17–20 |
-| Max fielders outside circle — Powerplay | 2 | 2 | 2 |
-| Max fielders outside circle — Middle and Death | 4 | 4 | 4 |
-| Max overs per bowler | 4 | 4 | 4 |
-| Circle radius | 23 m | 23 m | 23 m |
-| Nominal boundary (for drawing the circle) | 55 m | 55 m | 55 m |
+The T20 conditions are the same for all three grades.
 
-Each row also carries `confirmed` (boolean) and `source_ref` (rule number in the VPC rule book). While `confirmed = false` the app shows a small "rules unconfirmed" marker next to the grade chip, visible to Admins and Coaches.
+| Setting | Grades 1, 2 and 3 | Rule |
+|---|---|---|
+| Overs per innings | 20 | 19.2(a) |
+| Powerplay (fixed fielding-restriction overs) | 1–4 | 19.8(b) |
+| Power Surge (floating fielding-restriction overs) | 2 consecutive overs, chosen by the batters at the wicket, starting no earlier than over 11 and no later than over 19. If not called, they are overs 19–20 | 19.8(b)(i), (v) |
+| Max fielders outside the area — Powerplay and Power Surge | 2 | 19.8(b) |
+| Max fielders outside the area — all other overs | 4 | 19.8(b)(iii) |
+| Max fielders on the leg side | 5 | 19.8(a) |
+| Max overs per bowler | 4 | 19.5.1 |
+| Fielding restriction area radius | 23 m | 17.8.1 |
+| Boundary, maximum | 62 m | 14.7.1 |
+| Nominal boundary used to draw the map | 55 m | app setting |
+| Over rate | 20 overs in 75 minutes (3.75 minutes per over) | 19.9.2(b) |
 
-**Seeds to check first**
-- **Outside the circle after the powerplay: 4 or 5.** Women's T20 internationals and the WBBL allow 4. A 2019/20 Victorian Premier T20 rule extract found online says 5 for overs 7–20, but it is old and may be the men's rule. Seeded as 4. The templates in §6.1 are written with 5 deep fielders and trimmed automatically, so either value works.
-- **Circle radius.** 23 m (25.15 yards) is the women's international figure; v5.0 said 30 yards, which is the men's.
-- **Grade differences.** All three grades are seeded identically. If Grade 2 or 3 plays a shorter game or a different powerplay, only this table changes.
+Each row also carries `confirmed` (boolean) and `source_ref` (rule number). All rows ship with `confirmed = true`. If a value is later changed in the configuration, the row reverts to `confirmed = false` and the app shows a small "rules unconfirmed" marker next to the grade chip until it is re-checked.
+
+Grade names: Grade 1 = Women's 1st XI, Grade 2 = Women's 2nd XI, Grade 3 = Women's 3rd XI.
+
+**What this means for the app — these differ from every earlier version of this PRD**
+- **The powerplay is four overs, not six.**
+- **There is a Power Surge.** Two further overs with only two fielders out, taken when the batters choose after the 10th over. It is a separate phase with its own templates (§2.2, §6.1).
+- **Unless the Surge has already been taken, overs 19–20 are Surge overs.** The "Death" phase with four fielders out therefore applies to overs 17–18 always, and to overs 19–20 only when the Surge was used earlier. The Phase chip row carries a one-line hint saying this.
+- **Reduced-overs matches** change the number of restriction overs (table in Rule 19.8). v1 does not calculate this; the user picks the phase that applies.
 
 ### 2.2 Phases
 
-Exactly three phases, mutually exclusive: **Powerplay**, **Middle**, **Death**. The over windows come from §2.1. The user picks the phase by chip; no over number is entered.
+Four phases, mutually exclusive. The user picks the phase by chip; no over number is entered.
+
+| Phase | Overs | Max outside |
+|---|---|---|
+| **Powerplay** | 1–4 | 2 |
+| **Middle** | 5–16, when the Surge is not in progress | 4 |
+| **Power Surge** | the two overs the batters call (11–20), or 19–20 by default | 2 |
+| **Death** | 17–20, when the Surge is not in progress | 4 |
+
+Power Surge is a T20-only phase. It has its own templates because the batters are set and only two fielders are out. For bowling data (§4.2) the Surge uses the bowler's **Death** set, then Overall; there is no separate Surge tab. A **Finisher** batter switches Powerplay and Middle to the Death template (§5.3 Step 1) but never replaces the Surge template.
 
 ### 2.3 Fielding laws enforced in every phase
 
-1. At most `max_deep` fielders outside the circle for the active phase (§2.1).
-2. At most **5 fielders on the leg side** at the instant of delivery.
-3. At most **2 fielders behind square on the leg side** (Law 28.4.1), not counting the wicketkeeper.
+1. At most `max_deep` fielders outside the fielding restriction area for the active phase (§2.1). The area is two 23 m semicircles centred on each middle stump, joined by straight lines (Rule 17.8.1).
+2. At most **5 fielders on the leg side** at the instant of delivery (Rule 19.8(a)).
+3. At most **2 fielders behind square on the leg side** (Laws of Cricket 28.4.1, which the rule book adopts), not counting the wicketkeeper.
 4. Exactly **9 fielders** on the map. The bowler and wicketkeeper are drawn separately and never counted among the 9.
 
-Rules 2 and 3 were not modelled in v5.0. Confirm rule 2's number against the rule book along with §2.1.
+Rules 2 and 3 were not modelled in v5.0.
+
+**Other rule-book points the app surfaces as reminders (no engine effect)**
+- **Free hit (Rule 17.10.1):** after a no-ball the field may change only if a different batter is on strike. The Flip hand button is the correct tool for that case.
+- **Helmets (Rule 14.2):** a fielder closer than 7 m in front of square — short leg, silly point — must wear a helmet. The map marks those two positions with a helmet icon.
+- **Short-pitched balls:** only **one** short-pitched delivery per over in T20 (Rule 19.11). The Bouncer ball plan (§2.5) shows this reminder.
+- **Boundary (Rule 14.7.1):** no more than 62 m from the centre of the pitch in women's matches.
+- **Team size (Rule 14.1):** Grade 1 nominates 11 players; Grades 2 and 3 may nominate 12. The map always shows 9 fielders plus bowler and keeper.
 
 ### 2.4 Modifiers (one-tap toggles on top of the phase)
 
@@ -90,7 +113,7 @@ Two extra chip rows that exist only in the T20 instance.
 - Deep fielders on the short side are never chosen for relocation by a later Protect, and in Step 7 they are the last to be brought in.
 - The map marks that side of the boundary "short".
 
-**Death-over ball plan.** Chips shown whenever the Death template is in use: None / Yorker / Wide yorker / Slower ball / Bouncer. When a plan is chosen it **replaces the Length adjustment (Step 4)**; Wide yorker also replaces the Line adjustment (Step 3), because the plan fixes where the ball is going. Engine effect (Step 4b), each Protect applied in the order shown:
+**Death-over ball plan.** Chips shown whenever the Death or Power Surge template is in use: None / Yorker / Wide yorker / Slower ball / Bouncer. When a plan is chosen it **replaces the Length adjustment (Step 4)**; Wide yorker also replaces the Line adjustment (Step 3), because the plan fixes where the ball is going. Engine effect (Step 4b), each Protect applied in the order shown:
 
 | Plan | Field change |
 |---|---|
@@ -99,7 +122,7 @@ Two extra chip rows that exist only in the T20 instance.
 | Slower ball | Protect(deep midwicket), Protect(long-on), Protect(long-off) |
 | Bouncer | Protect(deep square leg), Protect(fine leg), Protect(third man) |
 
-A fielder placed by the ball plan is locked: later Protect calls cannot relocate her, and in Step 7 she is brought in only after every unlocked deep fielder. If the deep limit is lower than the number of Protects, the earlier ones win.
+A fielder placed by the ball plan is locked: later Protect calls cannot relocate her, and in Step 7 she is brought in only after every unlocked deep fielder. If the deep limit is lower than the number of Protects, the earlier ones win — in the Power Surge only the first two take effect. The Bouncer chip carries the reminder "one short ball per over (Rule 19.11)".
 
 ---
 
@@ -336,26 +359,28 @@ All thresholds (55, 30, 40, 15, 65, 35, 40, 55, small-sample 30) live in an `eng
 
 ## 6. T20 base templates
 
-### 6.1 The six templates
+### 6.1 The eight templates
 Written for a right-handed batter, before Step 2. Deep fielders are listed in **keep-priority order** — the last one listed is the first brought in when the limit is lower.
 
 | Template | Close | Ring | Deep (keep-priority order) |
 |---|---|---|---|
 | Pace · Powerplay | 1st slip | point, cover, mid-off, mid-on, midwicket, square leg | third man, fine leg |
+| Pace · Power Surge | — | short third man, backward point, cover, mid-off, mid-on, midwicket, short fine leg | deep midwicket, deep cover |
+| Spin · Power Surge | — | backward point, cover, mid-off, mid-on, midwicket, square leg, short fine leg | deep midwicket, long-off |
 | Pace · Middle | — | point, cover, mid-off, midwicket | deep square leg, long-on, deep cover, third man, deep midwicket |
 | Pace · Death | — | short third man, backward point, extra cover, short fine leg | long-on, long-off, deep square leg, deep midwicket, deep cover |
 | Spin · Powerplay | 1st slip | point, cover, mid-off, mid-on, midwicket, short fine leg | deep midwicket, deep cover |
 | Spin · Middle | — | point, cover, midwicket, short fine leg | long-on, deep midwicket, long-off, deep square leg, deep cover |
 | Spin · Death | — | point, extra cover, midwicket, short fine leg | long-on, cow corner, long-off, deep square leg, deep cover |
 
-With the seeded limit of 4, Step 7 brings the fifth deep fielder in to her inner partner (for example, Pace · Middle brings deep midwicket in; midwicket is occupied, so she goes to mid-on).
+With the limit of 4, Step 7 brings the fifth deep fielder in to her inner partner (for example, Pace · Middle brings deep midwicket in; midwicket is occupied, so she goes to mid-on).
 
 ### 6.2 Close-catcher cap
 Maximum close-zone fielders (keeper excluded) after all steps:
 
-| Powerplay | Middle | Death |
-|---|---|---|
-| 2 | 1 | 1 |
+| Powerplay | Middle | Power Surge | Death |
+|---|---|---|---|
+| 2 | 1 | 1 | 1 |
 
 ---
 
@@ -364,7 +389,7 @@ Maximum close-zone fielders (keeper excluded) after all steps:
 Mobile-first, usable one-handed in direct sunlight. Do not rely on colour alone: close, ring and deep fielders use different marker shapes as well as colours, and every fielder has a text label.
 
 1. **Sign in / Create club / Join with invite.**
-2. **Field (home).** Club name in the header with the instance name (T20). Chip rows: Grade · Phase · Bowler (club bowlers first, then generic type chips; Over / Around the wicket toggle) · Batter (type and hand; club players selectable for intra-club practice) · Modifiers · Short boundary · Ball plan (Death only). The map sits directly below and redraws on every change with no "generate" button and no spinner. A **Flip hand** button mirrors the map for the other batter. Under the map: the rationale line and any markers (generic field, overall figures, using One-Day data, small sample, rules unconfirmed). The last selection is remembered per user.
+2. **Field (home).** Club name in the header with the instance name (T20). Chip rows: Grade · Phase (Powerplay / Middle / Power Surge / Death) · Bowler (club bowlers first, then generic type chips; Over / Around the wicket toggle) · Batter (type and hand; club players selectable for intra-club practice) · Modifiers · Short boundary · Ball plan (Death only). The map sits directly below and redraws on every change with no "generate" button and no spinner. A **Flip hand** button mirrors the map for the other batter. Under the map: the rationale line and any markers (generic field, overall figures, using One-Day data, small sample). The last selection is remembered per user.
 3. **Players.** List with search. Each bowler row shows a badge: "line + length", "line only", "length only" or "no data", plus which phases have their own figures. Admin and Coach see Add / Edit; the edit form has Overall / Powerplay / Middle / Death tabs, each with the line and length groups and running totals (§4.2).
 4. **Club** (Admin only). Members, invites, club name.
 5. **Reference.** Read-only glossary of positions, phases and how the engine uses line and length.
@@ -374,9 +399,9 @@ Mobile-first, usable one-handed in direct sunlight. Do not rely on colour alone:
 ## 8. Data model and delivery phases
 
 **Global reference tables** (readable by any signed-in user, writable only by the service role)
-- `format_rules` (format, grade, overs, pp_end_over, death_start_over, max_deep_pp, max_deep_middle, max_deep_death, max_leg_side, max_bowler_overs, circle_radius_m, nominal_boundary_m, confirmed, source_ref)
+- `format_rules` (format, grade, overs, pp_end_over, death_start_over, max_deep_pp, max_deep_middle, max_deep_death, surge_overs, surge_earliest_over, max_deep_surge (the three surge columns are null for One-Day), max_leg_side, max_bowler_overs, circle_radius_m, nominal_boundary_m, confirmed, source_ref)
 - `field_positions` (name, zone, theta, r, r_keeper_up nullable, inner_partner nullable)
-- `base_templates` (format, bowling_family, phase, positions[], deep_keep_order[])
+- `base_templates` (format, bowling_family, phase — powerplay / middle / death, plus surge for T20 — positions[], deep_keep_order[])
 - `engine_config` (format, catcher caps per phase, thresholds json)
 
 **Club tables** (row-level security on `club_id`)
@@ -418,7 +443,7 @@ All rows are automated unit tests on `generateField`, except rows 21–24.
 | 11 | Every bowler × hand × phase × grade, no data | Deep count ≤ `max_deep` for that phase and grade |
 | 12 | Same sweep | Leg-side count ≤ 5 and behind-square-leg count ≤ 2 |
 | 13 | Same sweep | Exactly 9 fielders on 9 distinct named positions; close count ≤ cap |
-| 14 | Change `max_deep_middle` in config from 4 to 5 | Middle-overs fields gain one deep fielder with no code change |
+| 14 | Change `max_deep_middle` in config from 4 to 5 | Middle-overs fields that have a fifth deep fielder in their template keep her out, with no code change |
 | 15 | Line 40/20/20/10/10 (OFF 60), vs same bowler with no data | One more off-side ring fielder; third man or deep point manned |
 | 16 | Line 10/20/30/20/20 (LEG 40) | One more leg-side ring fielder; fine leg manned; laws still pass |
 | 17 | Line 35/25/5/15/20 (OFF 60, LEG 35) | Tag = Sprayed; field identical to no-line-data field |
@@ -433,13 +458,17 @@ All rows are automated unit tests on `generateField`, except rows 21–24.
 | 22 | Signed in as Player, write to `players` or `player_bowling_data` through the API | Refused by the database |
 | 23 | Signed in as Coach, update own `role` to admin through the API | Refused |
 | 24 | Claim the same invite code from two browsers at once | Exactly one succeeds |
-| 25 | T20, any grade, Middle, seeded rules | Exactly 4 deep fielders in every base template after Step 7 |
+| 25 | T20, any grade, Middle and Death | At most 4 deep fielders in every field after Step 7 |
 | 26 | T20 Powerplay, Tail-ender, Need wickets | Close count stays at the cap of 2 |
 | 27 | Death, pace, plan = Wide yorker, bowler has leg-drift line data | Deep point, deep cover and long-off manned; one more off-side ring fielder; line data ignored; laws pass |
 | 28 | Death, plan = Bouncer | Deep square leg and fine leg manned; behind-square-leg count ≤ 2 |
 | 29 | Death, plan = Yorker, `max_deep_death` = 4 | Long-on, long-off and deep square leg all still deep after Step 7 |
 | 30 | Middle, short boundary = Leg, RHB; then Flip hand | Deep square leg manned and kept; after flip the short side reads Off and deep point is manned |
 | 31 | Ball plan chips in Powerplay or Middle (batter not Finisher) | Not shown |
+| 32 | Power Surge, every bowler × hand, with and without data | Deep count ≤ 2; all laws pass |
+| 33 | Power Surge, plan = Yorker | Long-on and long-off are the two deep fielders |
+| 34 | Powerplay config | `pp_end_over` = 4, read from `format_rules`, not hard-coded |
+| 35 | Power Surge, bowler has a Death set and an Overall set | Death set used |
 
 **Speed:** signed-in user, app already loaded — a correct map for a new situation within 10 seconds; selecting a club bowler changes the map in under 100 ms.
 
@@ -447,8 +476,8 @@ All rows are automated unit tests on `generateField`, except rows 21–24.
 
 ## 10. Open questions
 
-1. **Rule book numbers (§2.1, §2.3).** Supply the 2026/27 VPC rule book, or the values for each grade, so the seeds can be confirmed.
-2. **Coach sign-off on cricket content.** The six templates (§6.1), catcher caps (§6.2) and all thresholds (§5.3) are reasonable club-level defaults written for this document, not a Premier coach's judgement. In particular, check whether the Middle and Death templates lean too much on long-on and long-off for the women's game, where more runs come along the ground and behind square; a short fine leg and a squarer deep fielder may serve better. The around-the-wicket rule (§5.3 Step 2) and the ball-plan fields (§2.5) also need a coach's eye. They are configuration, so a coach's corrections need no code change.
+1. ~~Rule book numbers~~ — resolved in v6.2 from the supplied rule book. Re-check §2.1 each season.
+2. **Coach sign-off on cricket content.** The base templates (§6.1), catcher caps (§6.2) and all thresholds (§5.3) are reasonable club-level defaults written for this document, not a Premier coach's judgement. In particular, check whether the Middle and Death templates lean too much on long-on and long-off for the women's game, where more runs come along the ground and behind square; a short fine leg and a squarer deep fielder may serve better. The around-the-wicket rule (§5.3 Step 2) and the ball-plan fields (§2.5) also need a coach's eye. They are configuration, so a coach's corrections need no code change.
 3. **Line per batter hand.** One set of line figures is applied to both right- and left-handers. Is that acceptable for v1?
 4. **Who may edit bowling data.** Currently Admin and Coach only. Should a Captain, or the bowler herself, be allowed?
 5. **Where the percentages come from.** Typed by hand in v1. If the club has scoring-app or video-tagging exports, a CSV import could follow.
