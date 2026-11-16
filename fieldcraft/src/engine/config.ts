@@ -5,13 +5,13 @@ import type { FormatRules, Position, Thresholds } from "./types";
  * theta: degrees clockwise from the striker→bowler direction. r: 0 at the striker, 1 at the boundary.
  */
 export const POSITIONS: Position[] = [
-  { name: "1st slip", zone: "close", theta: 168, r: 0.17, rUp: 0.05 },
-  { name: "2nd slip", zone: "close", theta: 160, r: 0.17, rUp: 0.05 },
-  { name: "3rd slip", zone: "close", theta: 152, r: 0.17, rUp: 0.05 },
-  { name: "Gully", zone: "close", theta: 135, r: 0.2 },
-  { name: "Leg slip", zone: "close", theta: 192, r: 0.15, rUp: 0.05 },
-  { name: "Silly point", zone: "close", theta: 75, r: 0.06 },
-  { name: "Short leg", zone: "close", theta: 285, r: 0.06 },
+  { name: "1st slip", zone: "close", theta: 162, r: 0.24, rUp: 0.16 },
+  { name: "2nd slip", zone: "close", theta: 150, r: 0.24, rUp: 0.16 },
+  { name: "3rd slip", zone: "close", theta: 138, r: 0.24, rUp: 0.16 },
+  { name: "Gully", zone: "close", theta: 122, r: 0.26 },
+  { name: "Leg slip", zone: "close", theta: 198, r: 0.24, rUp: 0.16 },
+  { name: "Silly point", zone: "close", theta: 75, r: 0.1 },
+  { name: "Short leg", zone: "close", theta: 285, r: 0.1 },
   { name: "Short cover", zone: "close", theta: 50, r: 0.16 },
   { name: "Short midwicket", zone: "close", theta: 310, r: 0.16 },
   { name: "Short third man", zone: "ring", theta: 150, r: 0.36 },
@@ -39,7 +39,8 @@ export const POSITIONS: Position[] = [
 
 export const POS: Record<string, Position> = Object.fromEntries(POSITIONS.map((p) => [p.name, p]));
 
-export const KEEPER = { theta: 180, rBack: 0.15, rUp: 0.02 };
+/** Close-in radii are drawn larger than life so markers stay apart on a phone. */
+export const KEEPER = { theta: 180, rBack: 0.2, rUp: 0.06 };
 
 /** Rule 14.2: a helmet is required closer than 7 m in front of square. */
 export const HELMET_POSITIONS = new Set(["Short leg", "Silly point"]);

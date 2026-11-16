@@ -244,6 +244,8 @@ class Field {
     let changed = false;
     for (const need of ["Mid-off", "Mid-on"]) {
       if (this.has(need)) continue;
+      // A long-off / long-on already guards that straight boundary; don't stand a fielder in front of her.
+      if (this.has(need === "Mid-off" ? "Long-off" : "Long-on")) continue;
       const ring = (s: Side) => this.set.filter((n) => POS[n].zone === "ring" && sideOf(n) === s).length;
       const side: Side = ring("leg") > ring("off") ? "leg" : "off";
       const ex = ["Mid-off", "Mid-on"];
@@ -253,7 +255,7 @@ class Field {
       this.note(step, `${why} → ${donor.toLowerCase()} moved to ${need.toLowerCase()}`);
       changed = true;
     }
-    if (!changed) this.note(step, `${why}: mid-off and mid-on already in place`, true);
+    if (!changed) this.note(step, `${why}: straight field already in place`, true);
   }
 
   /** Send the most recently added catcher (or the most expendable one) back to the ring. */

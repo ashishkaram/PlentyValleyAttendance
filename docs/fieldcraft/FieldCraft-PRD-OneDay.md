@@ -207,13 +207,13 @@ Each position has a **zone**. Zone, not radius, decides whether a named fielder 
 
 | Zone | Position | θ | r |
 |---|---|---|---|
-| Close | 1st slip | 168 | 0.17 keeper back / 0.05 keeper up |
-| Close | 2nd slip | 160 | 0.17 / 0.05 |
-| Close | 3rd slip | 152 | 0.17 / 0.05 |
-| Close | Gully | 135 | 0.20 |
-| Close | Leg slip | 192 | 0.15 / 0.05 |
-| Close | Silly point | 75 | 0.06 |
-| Close | Short leg | 285 | 0.06 |
+| Close | 1st slip | 162 | 0.24 keeper back / 0.16 keeper up |
+| Close | 2nd slip | 150 | 0.24 / 0.16 |
+| Close | 3rd slip | 138 | 0.24 / 0.16 |
+| Close | Gully | 122 | 0.26 |
+| Close | Leg slip | 198 | 0.24 / 0.16 |
+| Close | Silly point | 75 | 0.10 |
+| Close | Short leg | 285 | 0.10 |
 | Close | Short cover | 50 | 0.16 |
 | Close | Short midwicket | 310 | 0.16 |
 | Ring | Short third man | 150 | 0.36 |
@@ -237,12 +237,13 @@ Each position has a **zone**. Zone, not radius, decides whether a named fielder 
 | Deep | Deep square leg | 272 | 0.92 |
 | Deep | Fine leg | 215 | 0.92 |
 | Deep | Deep fine leg | 200 | 0.92 |
-| — | Wicketkeeper | 180 | 0.15 back / 0.02 up |
+| — | Wicketkeeper | 180 | 0.20 back / 0.06 up |
 | — | Bowler | 0 | 0.33 (bowling crease) |
 
 - **Leg side** = θ strictly between 180 and 360. **Behind square on the leg side** = θ strictly between 180 and 270 (leg slip, short fine leg, fine leg, deep fine leg).
 - The circle is drawn at `circle_radius_m ÷ nominal_boundary_m` from §2.1. Ring positions sit inside it.
 - Each deep position has an **inner partner**, the ring position at the same angle: third man → short third man; deep backward point → backward point; deep point → point; deep cover → cover; long-off → mid-off; long-on → mid-on; cow corner and deep midwicket → midwicket; deep square leg → square leg; fine leg and deep fine leg → short fine leg. If the partner is occupied, use the nearest free ring position by angle.
+- Close-zone angles and radii are deliberately larger than life so the markers stay apart on a phone screen.
 - Table values are seed data in `field_positions`, editable without a code change.
 
 ### 5.3 Algorithm
@@ -282,7 +283,7 @@ Every step is expressed batter-relative. A step that cannot find a fielder to mo
 | Sprayed | OFF ≥ 55 **and** LEG ≥ 30 | None. No side to favour. |
 | Off-channel | OFF ≥ 55 | Move the first leg-side ring donor to the first free of: backward point, extra cover, short third man. If outside off alone ≥ 40, also Protect(third man, deep point). |
 | Leg-drift | LEG ≥ 30 | Move the first off-side ring donor to the first free of: square leg, short fine leg, midwicket. Also Protect(fine leg, deep square leg). If outside leg alone ≥ 15, fine leg becomes top keep-priority for Step 7. |
-| Straight | STRAIGHT ≥ 65 | Ensure both mid-off and mid-on are in the ring, moving the first donor from whichever side has more ring fielders. |
+| Straight | STRAIGHT ≥ 65 | Ensure both mid-off and mid-on are in the ring, moving the first donor from whichever side has more ring fielders. A mid-off is not added when long-off is already out, nor a mid-on when long-on is. |
 | Balanced | otherwise | None. |
 
 **Step 4 — Length adjustment** (skipped if no length data, §4.3). First match wins:
