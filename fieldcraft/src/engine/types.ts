@@ -59,6 +59,8 @@ export interface Modifiers {
   setBatter?: boolean;
   needWickets?: boolean;
   protectRuns?: boolean;
+  /** One-Day only: old ball reversing (pace, middle and death overs) */
+  reverseSwing?: boolean;
 }
 
 export interface Situation {
@@ -81,8 +83,10 @@ export interface Template {
 
 export interface FormatRules {
   format: "t20" | "oneday";
-  maxDeep: Record<Phase, number>;
-  catcherCap: Record<Phase, number>;
+  /** phases this format has, in order */
+  phases: Phase[];
+  maxDeep: Partial<Record<Phase, number>>;
+  catcherCap: Partial<Record<Phase, number>>;
   maxLegSide: number;
   maxBehindSquareLeg: number;
   templates: Record<Family, Partial<Record<Phase, Template>>>;

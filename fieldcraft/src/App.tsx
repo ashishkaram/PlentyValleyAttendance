@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { FORMAT_LABEL } from "./engine/config";
 import type { BowlingSet } from "./engine/resolve";
+import { FORMAT } from "./format";
 import { canEditPlayers, store, type Player, type Session } from "./store";
 import { NewPassword, Onboarding, SignIn } from "./ui/AuthScreen";
 import { ClubScreen } from "./ui/ClubScreen";
@@ -25,6 +27,10 @@ export default function App() {
     } catch {
       setSession(null);
     }
+  }, []);
+
+  useEffect(() => {
+    document.title = `FieldCraft ${FORMAT_LABEL[FORMAT]}`;
   }, []);
 
   useEffect(() => {
@@ -83,7 +89,7 @@ export default function App() {
       <header className="sticky top-0 z-10 flex items-center justify-between bg-slate-900 px-3 py-2 text-white">
         <div className="min-w-0">
           <div className="truncate text-base leading-tight font-black">{m.clubName}</div>
-          <div className="text-xs font-semibold text-emerald-300">FieldCraft T20 · Women's Premier</div>
+          <div className="text-xs font-semibold text-emerald-300">FieldCraft {FORMAT_LABEL[FORMAT]} · Women's Premier</div>
         </div>
         <div className="flex items-center gap-2 text-xs font-semibold">
           {store.mode === "demo" && <span className="rounded bg-amber-400 px-1.5 py-0.5 text-slate-900">DEMO</span>}

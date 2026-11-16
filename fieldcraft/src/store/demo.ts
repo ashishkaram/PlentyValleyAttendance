@@ -1,7 +1,7 @@
 import type { BowlingSet, Format, PhaseScope } from "../engine/resolve";
 import type { Invite, Member, Player, Role, Session, Store } from "./types";
 
-const KEY = "fieldcraft-demo-v1";
+const KEY = "fieldcraft-demo-v2";
 
 interface Data {
   clubName: string;
@@ -20,6 +20,7 @@ const SEED: Data = {
   bowling: [
     { playerId: "d1", format: "t20", scope: "overall", line: { outsideOff: 38, off: 24, middle: 20, leg: 10, outsideLeg: 8 }, length: { short: 20, good: 58, full: 22 }, ballsSampled: 180 },
     { playerId: "d1", format: "t20", scope: "death", line: { outsideOff: 20, off: 25, middle: 30, leg: 15, outsideLeg: 10 }, length: { short: 15, good: 30, full: 55 }, ballsSampled: 48 },
+    { playerId: "d2", format: "oneday", scope: "overall", line: { outsideOff: 15, off: 30, middle: 35, leg: 15, outsideLeg: 5 }, length: { short: 12, good: 60, full: 28 }, ballsSampled: 240 },
     { playerId: "d3", format: "t20", scope: "overall", line: { outsideOff: 12, off: 20, middle: 30, leg: 22, outsideLeg: 16 }, ballsSampled: 24 },
   ],
 };

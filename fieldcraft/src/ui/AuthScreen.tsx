@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from "react";
+import { FORMAT_LABEL } from "../engine/config";
+import { FORMAT } from "../format";
 import { store } from "../store";
 import { Button, Card, ErrorNote, Field, inputCls } from "./bits";
 
@@ -6,7 +8,7 @@ function Shell(props: { children: React.ReactNode }) {
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col justify-center gap-4 p-4">
       <div className="text-center">
-        <h1 className="text-3xl font-black tracking-tight">FieldCraft <span className="text-emerald-700">T20</span></h1>
+        <h1 className="text-3xl font-black tracking-tight">FieldCraft <span className="text-emerald-700">{FORMAT_LABEL[FORMAT]}</span></h1>
         <p className="text-sm text-slate-600">Field maps for Victorian Premier Cricket Women's</p>
       </div>
       {props.children}

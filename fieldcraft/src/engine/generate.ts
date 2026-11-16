@@ -113,10 +113,10 @@ class Field {
     return this.set.filter((n) => POS[n].zone === zone).length;
   }
   get maxDeep() {
-    return this.rules.maxDeep[this.phase];
+    return this.rules.maxDeep[this.phase]!;
   }
   get cap() {
-    return this.rules.catcherCap[this.phase];
+    return this.rules.catcherCap[this.phase]!;
   }
   legCount() {
     return this.set.filter((n) => sideOf(n) === "leg").length;
@@ -304,14 +304,17 @@ export function generateField(rules: FormatRules, s: Situation, thresholds: Thre
   // Step 1 — base template
   const templatePhase: Phase = batter.type === "finisher" && phase !== "surge" ? "death" : phase;
   const template = rules.templates[family][templatePhase];
-  if (!template) throw new Error(`No ${family} template for ${templatePhase}`);
+  if (!template || !rules.phases.includes(phase)) throw new Error(`No ${family} template for ${templatePhase} in ${rules.format}`);
   const f = new Field(rules, phase, shortSide, template);
   if (templatePhase !== phase) f.note("1", "Finisher at the crease → death-overs field");
   f.fitDeep("1");
 
   // Step 2 — movement bias
-  const movement = movementFor(bowler, batter.hand);
-  const moveWord = family === "spin" ? "turning" : bowler.swing && bowler.swing !== "none" ? "swinging" : "angled";
+  // One-Day: an old ball reversing swings the opposite way to the bowler's usual shape.
+  const reversing = !!mods.reverseSwing && family === "pace" && (phase === "middle" || phase === "death");
+  const natural = movementFor(bowler, batter.hand);
+  const movement: Movement = reversing ? (natural === "away" ? "in" : "away") : natural;
+  const moveWord = reversing ? "reversing" : family === "spin" ? "turning" : bowler.swing && bowler.swing !== "none" ? "swinging" : "angled";
   const attackMovement = (step: string, why: string, allowSlipMove: boolean) => {
     if (movement === "away") return f.attack(AWAY_CATCHERS[family], step, why);
     const out = f.attack(IN_CATCHERS[family], step, why);
@@ -329,6 +332,7 @@ export function generateField(rules: FormatRules, s: Situation, thresholds: Thre
     return out;
   };
   attackMovement("2", `${moveWord[0].toUpperCase()}${moveWord.slice(1)} ${movement}`, true);
+  if (reversing) f.protect([movement === "away" ? "Third man" : "Fine leg"], "2", "Old ball reversing");
 
   // Ball plan (T20 §2.5) is only live when a death or surge template is in use.
   const plan = s.ballPlan && s.ballPlan !== "none" && (templatePhase === "death" || templatePhase === "surge") ? s.ballPlan : null;

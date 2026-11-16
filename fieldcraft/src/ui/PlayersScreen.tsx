@@ -2,11 +2,12 @@ import { useState } from "react";
 import { lengthTagFor, lineTagFor } from "../engine/generate";
 import { scaleTo100, type BowlingSet, type PhaseScope } from "../engine/resolve";
 import type { BatterType, Family, Hand, PaceBand, SpinType, Swing } from "../engine/types";
+import { FORMAT_LABEL } from "../engine/config";
+import { FORMAT } from "../format";
 import { store, type Player } from "../store";
 import { Badge, Button, Card, Chip, Choice, ErrorNote, Field, inputCls } from "./bits";
 import { defaultKeeperUp } from "./FieldScreen";
 
-const FORMAT = "t20" as const;
 const SCOPES: [PhaseScope, string][] = [["overall", "Overall"], ["powerplay", "Powerplay"], ["middle", "Middle"], ["death", "Death"]];
 const LINE_FIELDS = [["outsideOff", "Outside off"], ["off", "Off stump"], ["middle", "Middle stump"], ["leg", "Leg stump"], ["outsideLeg", "Outside leg"]] as const;
 const LENGTH_FIELDS = [["short", "Short"], ["good", "Good length"], ["full", "Full"]] as const;
@@ -316,7 +317,7 @@ function BowlingData(props: { player: Player; sets: BowlingSet[]; canEdit: boole
   );
 
   return (
-    <Card title="T20 line and length">
+    <Card title={`${FORMAT_LABEL[FORMAT]} line and length`}>
       <div className="mb-3 flex flex-wrap gap-1.5">
         {SCOPES.map(([s, label]) => {
           const has = props.sets.some((x) => x.format === FORMAT && x.scope === s);
@@ -326,7 +327,7 @@ function BowlingData(props: { player: Player; sets: BowlingSet[]; canEdit: boole
       <p className="mb-3 text-sm text-slate-600">
         {scope === "overall"
           ? "Used for any phase that has no figures of its own."
-          : `Used only in the ${scope === "death" ? "death overs and the Power Surge" : scope}. Leave empty to use the Overall figures.`}
+          : `Used only in the ${scope === "death" ? (FORMAT === "t20" ? "death overs and the Power Surge" : "death overs") : scope}. Leave empty to use the Overall figures.`}
       </p>
       <fieldset disabled={ro} className="space-y-4">
         <div>

@@ -1,16 +1,21 @@
-# FieldCraft T20
+# FieldCraft — T20 and One-Day
 
-Field-map generator for Victorian Premier Cricket Women's T20 (Grades 1, 2 and 3).
+Field-map generator for Victorian Premier Cricket Women's (Grades 1, 2 and 3).
+One codebase builds two apps: **FieldCraft T20** and **FieldCraft One-Day**. They share one
+Supabase project, so a club signs up once and enters its players once.
 Pick the bowler, batter and phase and get a field map that obeys the playing conditions.
-Built from `docs/fieldcraft/FieldCraft-PRD-T20.md` (v6.2), Phase 1.
+Built from `docs/fieldcraft/FieldCraft-PRD-T20.md` and `FieldCraft-PRD-OneDay.md` (v6.2), Phase 1.
 
-![Field screen](docs-screenshot.png)
+| T20 | One-Day |
+|---|---|
+| ![T20](docs-screenshot.png) | ![One-Day](docs-screenshot-oneday.png) |
 
 ## Run it
 
 ```bash
 npm install
-npm run dev
+npm run dev           # T20
+npm run dev:oneday    # One-Day, on port 5174
 ```
 
 With no Supabase settings the app runs in **demo mode**: no login, four sample players,
@@ -30,7 +35,7 @@ The first person to sign up creates the club and becomes its Admin. Everyone els
 ## Tests
 
 ```bash
-npm test                 # engine: 37 tests, including a 140,000-combination sweep of the fielding laws
+npm test                 # engine: 45 tests for both formats, including sweeps of every combination against the fielding laws
 scripts/test-db.sh       # database: isolation, roles, invites (needs a local Postgres 16+, PGHOST etc.)
 ```
 
@@ -54,9 +59,25 @@ scripts/test-db.sh       # database: isolation, roles, invites (needs a local Po
 - The schema is applied to the live `fieldcraft` Supabase project and its isolation, role and
   invite rules were checked there. Signing in through the app against that project has not been
   tested end to end.
-- One-Day is a separate instance and is not built.
 
 ## Deploy
 
-Any static host. Build with `npm run build` and serve `dist/`. Set the two `VITE_SUPABASE_*`
-variables in the host's build settings.
+Any static host, as two sites from this one folder:
+
+| Site | Build command | Output folder |
+|---|---|---|
+| T20 | `npm run build` | `dist` |
+| One-Day | `npm run build:oneday` | `dist-oneday` |
+
+Set the two `VITE_SUPABASE_*` variables in each site's build settings.
+
+## What differs between the two apps
+
+| | T20 | One-Day |
+|---|---|---|
+| Phases | Powerplay 1–4, Middle, Power Surge, Death | Powerplay, Middle, Death |
+| By grade | same for all grades | 50 / 45 / 40 overs, powerplay 10 / 9 / 8, bowler limit 10 / 9 / 8 |
+| Fielders out | 2 in Powerplay and Surge, else 4 | 2 in Powerplay, else 4 |
+| Starting fields | defensive | more attacking: three catchers behind the wicket with the new ball |
+| Only in this app | short boundary, death-over ball plan | old ball reversing |
+| Bowling figures | its own sets; borrows One-Day's Overall if empty | its own sets; borrows T20's Overall if empty |

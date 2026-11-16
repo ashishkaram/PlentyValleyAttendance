@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:oneday": "tsc --noEmit && VITE_FORMAT=oneday vite build --outDir dist-oneday",
+    "dev:oneday": "VITE_FORMAT=oneday vite --port 5174"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

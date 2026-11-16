@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { POS, T20_RULES } from "./config";
+import { CONDITIONS, ONEDAY_RULES, POS, T20_RULES } from "./config";
 import { generateField, lineTagFor } from "./generate";
 import { resolveBowlingData, scaleTo100, type BowlingSet } from "./resolve";
 import type { BatterType, Bowler, FieldResult, FormatRules, Hand, LineData, Phase, Situation } from "./types";
@@ -79,8 +79,8 @@ const MODS = [{}, { newBatter: true, needWickets: true }, { setBatter: true, pro
 function checkLaws(f: FieldResult, phase: Phase, rules: FormatRules = R) {
   expect(f.fielders).toHaveLength(9);
   expect(new Set(names(f)).size).toBe(9);
-  expect(f.counts.deep).toBeLessThanOrEqual(rules.maxDeep[phase]);
-  expect(f.counts.close).toBeLessThanOrEqual(rules.catcherCap[phase]);
+  expect(f.counts.deep).toBeLessThanOrEqual(rules.maxDeep[phase]!);
+  expect(f.counts.close).toBeLessThanOrEqual(rules.catcherCap[phase]!);
   expect(f.counts.legSide).toBeLessThanOrEqual(5);
   expect(f.counts.behindSquareLeg).toBeLessThanOrEqual(2);
 }
@@ -257,5 +257,51 @@ describe("rationale", () => {
         expect(count(f, offRing)).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe("One-Day instance (One-Day PRD §9)", () => {
+  const OD = ONEDAY_RULES;
+  const od = (s: Partial<Situation> & { bowler: Bowler }, hand: Hand = "R") => generateField(OD, { phase: "middle", batter: { hand }, ...s });
+
+  it("has three phases and no Power Surge", () => {
+    expect(OD.phases).toEqual(["powerplay", "middle", "death"]);
+    expect(() => od({ bowler: pace(), phase: "surge" })).toThrow();
+  });
+  it("laws hold for every combination", () => {
+    for (const bowler of BOWLERS) for (const hand of ["R", "L"] as Hand[]) for (const phase of OD.phases)
+      for (const type of TYPES) for (const ln of LINES) for (const len of LENGTHS) for (const m of MODS)
+        for (const reverseSwing of [false, true])
+          checkLaws(generateField(OD, { phase, bowler, batter: { hand, type }, line: ln, length: len, modifiers: { ...m, reverseSwing } }), phase, OD);
+  }, 60000);
+  it("powerplay is more attacking than T20: three catchers behind the wicket plus the movement catcher", () => {
+    const f = od({ bowler: pace({ swing: "out" }), phase: "powerplay" });
+    expect(f.counts.close).toBe(4);
+    for (const n of ["1st slip", "2nd slip", "Gully", "3rd slip"]) expect(names(f)).toContain(n);
+    expect(f.counts.deep).toBe(2);
+  });
+  it("middle and death both allow four out", () => {
+    expect(od({ bowler: spin("leg") }).counts.deep).toBe(4);
+    expect(od({ bowler: pace(), phase: "death" }).counts.deep).toBe(4);
+  });
+  it("25: grades differ only in the conditions read from config", () => {
+    expect([CONDITIONS.oneday["1"], CONDITIONS.oneday["2"], CONDITIONS.oneday["3"]].map((c) => [c.overs, c.powerplayEnd, c.maxBowlerOvers]))
+      .toEqual([[50, 10, 10], [45, 9, 9], [40, 8, 8]]);
+  });
+  it("26: outswing to RHB with the old ball reversing moves in, and fine leg is manned", () => {
+    const f = od({ bowler: pace({ swing: "out" }), modifiers: { reverseSwing: true } });
+    expect(f.movement).toBe("in");
+    expect(names(f)).toContain("Short midwicket");
+    expect(names(f)).toContain("Fine leg");
+    expect(f.rationale).toContain("Reversing in");
+  });
+  it("27: reverse swing is ignored for spin and in the powerplay", () => {
+    expect(names(od({ bowler: spin("off"), modifiers: { reverseSwing: true } }))).toEqual(names(od({ bowler: spin("off") })));
+    expect(names(od({ bowler: pace(), phase: "powerplay", modifiers: { reverseSwing: true } }))).toEqual(names(od({ bowler: pace(), phase: "powerplay" })));
+  });
+  it("mirroring holds: off-spin to LHB turns away, slip on screen left", () => {
+    const f = od({ bowler: spin("off") }, "L");
+    expect(f.movement).toBe("away");
+    expect(screenSide(f, "1st slip")).toBe(-1);
   });
 });

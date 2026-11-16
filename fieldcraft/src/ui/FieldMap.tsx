@@ -1,9 +1,9 @@
-import { T20_CONDITIONS } from "../engine/config";
+import { GROUND } from "../engine/config";
 import type { FieldResult, Hand, ShortSide, Zone } from "../engine/types";
 
-const B = T20_CONDITIONS.nominalBoundaryM;
-const HALF = T20_CONDITIONS.pitchLengthM / 2;
-const CIRCLE = T20_CONDITIONS.circleRadiusM;
+const B = GROUND.nominalBoundaryM;
+const HALF = GROUND.pitchLengthM / 2;
+const CIRCLE = GROUND.circleRadiusM;
 const VIEW = 66;
 
 /**

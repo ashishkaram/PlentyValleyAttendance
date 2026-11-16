@@ -78,6 +78,7 @@ export const THRESHOLDS: Thresholds = {
  */
 export const T20_RULES: FormatRules = {
   format: "t20",
+  phases: ["powerplay", "middle", "surge", "death"],
   maxDeep: { powerplay: 2, middle: 4, surge: 2, death: 4 }, // 19.8(b)
   catcherCap: { powerplay: 2, middle: 1, surge: 1, death: 1 },
   maxLegSide: 5, // 19.8(a)
@@ -130,17 +131,73 @@ export const T20_RULES: FormatRules = {
   },
 };
 
-/** Playing conditions shown in the app (PRD §2.1). */
-export const T20_CONDITIONS = {
-  overs: 20,
-  powerplayOvers: "1–4",
-  surge: "2 overs called by the batters, from over 11; overs 19–20 if not called",
-  maxBowlerOvers: 4,
-  circleRadiusM: 23,
-  maxBoundaryM: 62,
-  nominalBoundaryM: 55,
-  pitchLengthM: 20.12,
+/**
+ * VPC Women's One-Day — Rules of Premier Cricket, Rule 17 (One-Day PRD §2.1, §6).
+ * One powerplay at the start; four fielders out for every other over.
+ */
+export const ONEDAY_RULES: FormatRules = {
+  format: "oneday",
+  phases: ["powerplay", "middle", "death"],
+  maxDeep: { powerplay: 2, middle: 4, death: 4 }, // 17.9.4
+  catcherCap: { powerplay: 4, middle: 3, death: 1 },
+  maxLegSide: 5, // 17.9.1
+  maxBehindSquareLeg: 2, // Laws of Cricket 28.4.1
+  templates: {
+    pace: {
+      powerplay: {
+        close: ["1st slip", "2nd slip", "Gully"],
+        ring: ["Cover", "Mid-off", "Mid-on", "Square leg"],
+        deep: ["Third man", "Fine leg"],
+      },
+      middle: {
+        close: ["1st slip"],
+        ring: ["Point", "Cover", "Mid-off", "Mid-on"],
+        deep: ["Third man", "Fine leg", "Deep square leg", "Deep cover"],
+      },
+      death: T20_RULES.templates.pace.death,
+    },
+    spin: {
+      powerplay: T20_RULES.templates.spin.powerplay,
+      middle: {
+        close: ["1st slip"],
+        ring: ["Point", "Cover", "Midwicket", "Short fine leg"],
+        deep: ["Long-on", "Deep midwicket", "Long-off", "Deep square leg"],
+      },
+      death: T20_RULES.templates.spin.death,
+    },
+  },
 };
+
+/** Ground dimensions, the same in both formats (Rules 14.7.1, 17.8.1). */
+export const GROUND = { circleRadiusM: 23, maxBoundaryM: 62, nominalBoundaryM: 55, pitchLengthM: 20.12 };
+
+export type Grade = "1" | "2" | "3";
+
+export interface Conditions {
+  overs: number;
+  /** last over of the powerplay */
+  powerplayEnd: number;
+  /** first over of the death phase (an app convention in One-Day: the last fifth) */
+  deathStart: number;
+  maxBowlerOvers: number;
+}
+
+/** Playing conditions per grade (PRD §2.1). T20 is the same for every grade. */
+export const CONDITIONS: Record<"t20" | "oneday", Record<Grade, Conditions>> = {
+  t20: {
+    "1": { overs: 20, powerplayEnd: 4, deathStart: 17, maxBowlerOvers: 4 }, // 19.2, 19.8, 19.5
+    "2": { overs: 20, powerplayEnd: 4, deathStart: 17, maxBowlerOvers: 4 },
+    "3": { overs: 20, powerplayEnd: 4, deathStart: 17, maxBowlerOvers: 4 },
+  },
+  oneday: {
+    "1": { overs: 50, powerplayEnd: 10, deathStart: 41, maxBowlerOvers: 10 }, // 17.3.1, 17.9.4, 17.7.1
+    "2": { overs: 45, powerplayEnd: 9, deathStart: 37, maxBowlerOvers: 9 },
+    "3": { overs: 40, powerplayEnd: 8, deathStart: 33, maxBowlerOvers: 8 },
+  },
+};
+
+export const RULES = { t20: T20_RULES, oneday: ONEDAY_RULES };
+export const FORMAT_LABEL = { t20: "T20", oneday: "One-Day" };
 
 export const PHASE_LABEL: Record<string, string> = {
   powerplay: "Powerplay",

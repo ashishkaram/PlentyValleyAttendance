@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { PHASE_LABEL, T20_CONDITIONS, T20_RULES } from "../engine/config";
+import { CONDITIONS, FORMAT_LABEL, PHASE_LABEL, RULES } from "../engine/config";
+import { FORMAT, OTHER_FORMAT } from "../format";
 import { describeBowler, generateField } from "../engine/generate";
 import { resolveBowlingData, type BowlingSet, type DataSource } from "../engine/resolve";
 import type { BallPlan, BatterType, Bowler, Family, Hand, PaceBand, Phase, ShortSide, SpinType, Swing } from "../engine/types";
@@ -24,6 +25,7 @@ interface Selection {
   setBatter: boolean;
   needWickets: boolean;
   protectRuns: boolean;
+  reverseSwing: boolean;
   shortSide: ShortSide;
   ballPlan: BallPlan;
 }
@@ -45,6 +47,7 @@ const DEFAULT: Selection = {
   setBatter: false,
   needWickets: false,
   protectRuns: false,
+  reverseSwing: false,
   shortSide: "none",
   ballPlan: "none",
 };
@@ -71,15 +74,16 @@ function bowlerFromPlayer(p: Player): Bowler {
 const SOURCE_TEXT: Record<DataSource, string> = {
   phase: "this phase",
   overall: "overall figures",
-  "other-format": "One-Day data",
+  "other-format": `${FORMAT_LABEL[OTHER_FORMAT]} data`,
   none: "none",
 };
 
 export function FieldScreen(props: { players: Player[]; bowling: BowlingSet[]; userId: string }) {
-  const storageKey = `fieldcraft-selection-${props.userId}`;
+  const storageKey = `fieldcraft-selection-${FORMAT}-${props.userId}`;
   const [sel, setSel] = useState<Selection>(() => {
     try {
-      return { ...DEFAULT, ...(JSON.parse(localStorage.getItem(storageKey) ?? "{}") as Partial<Selection>) };
+      const saved = { ...DEFAULT, ...(JSON.parse(localStorage.getItem(storageKey) ?? "{}") as Partial<Selection>) };
+      return RULES[FORMAT].phases.includes(saved.phase) ? saved : { ...saved, phase: "powerplay" };
     } catch {
       return DEFAULT;
     }
@@ -106,25 +110,29 @@ export function FieldScreen(props: { players: Player[]; bowling: BowlingSet[]; u
   const bowler: Bowler = { ...base, aroundWicket: sel.around, keeperUp: sel.keeperOverride ?? base.keeperUp };
 
   const data = useMemo(
-    () => resolveBowlingData(player ? props.bowling.filter((b) => b.playerId === player.id) : [], "t20", sel.phase),
+    () => resolveBowlingData(player ? props.bowling.filter((b) => b.playerId === player.id) : [], FORMAT, sel.phase),
     [player, props.bowling, sel.phase],
   );
 
-  const planAvailable = sel.phase === "death" || sel.phase === "surge" || sel.batterType === "finisher";
+  const rules = RULES[FORMAT];
+  const cond = CONDITIONS[FORMAT][sel.grade];
+  const isT20 = FORMAT === "t20";
+  const planAvailable = isT20 && (sel.phase === "death" || sel.phase === "surge" || sel.batterType === "finisher");
+  const reverseAvailable = !isT20 && bowler.family === "pace" && (sel.phase === "middle" || sel.phase === "death");
   const field = useMemo(
     () =>
-      generateField(T20_RULES, {
+      generateField(rules, {
         phase: sel.phase,
         bowler,
         batter: { hand: sel.hand, type: sel.batterType === "none" ? undefined : sel.batterType },
         line: data.line,
         length: data.length,
-        modifiers: { newBatter: sel.newBatter, setBatter: sel.setBatter, needWickets: sel.needWickets, protectRuns: sel.protectRuns },
-        shortSide: sel.shortSide,
+        modifiers: { newBatter: sel.newBatter, setBatter: sel.setBatter, needWickets: sel.needWickets, protectRuns: sel.protectRuns, reverseSwing: reverseAvailable && sel.reverseSwing },
+        shortSide: isT20 ? sel.shortSide : "none",
         ballPlan: planAvailable ? sel.ballPlan : "none",
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(bowler), data, sel, planAvailable],
+    [JSON.stringify(bowler), data, sel, planAvailable, reverseAvailable],
   );
 
   const swap = (s: ShortSide): ShortSide => (s === "off" ? "leg" : s === "leg" ? "off" : "none");
@@ -133,7 +141,7 @@ export function FieldScreen(props: { players: Player[]; bowling: BowlingSet[]; u
   return (
     <div className="mx-auto max-w-3xl">
       <div className="relative">
-        <FieldMap field={field} hand={sel.hand} shortSide={sel.shortSide} />
+        <FieldMap field={field} hand={sel.hand} shortSide={isT20 ? sel.shortSide : "none"} />
         <button
           type="button"
           onClick={() => set({ hand: sel.hand === "R" ? "L" : "R", shortSide: swap(sel.shortSide) })}
@@ -142,7 +150,7 @@ export function FieldScreen(props: { players: Player[]; bowling: BowlingSet[]; u
           ⇄ Flip hand
         </button>
         <div className="absolute bottom-2 left-2 rounded-lg bg-slate-900/85 px-2 py-1 text-xs font-semibold text-white">
-          {field.counts.deep} out · {field.counts.legSide} leg side · max {T20_RULES.maxDeep[sel.phase]} out
+          {field.counts.deep} out · {field.counts.legSide} leg side · max {rules.maxDeep[sel.phase]} out
         </div>
       </div>
 
@@ -172,24 +180,28 @@ export function FieldScreen(props: { players: Player[]; bowling: BowlingSet[]; u
       <div className="border-y border-slate-200 bg-white px-3 pt-1 pb-1">
         <Row
           label="Grade"
-          hint={`${T20_CONDITIONS.overs} overs · powerplay overs ${T20_CONDITIONS.powerplayOvers} · max ${T20_CONDITIONS.maxBowlerOvers} overs a bowler · ${sel.grade === "1" ? "11 players" : "12 may be nominated"}`}
+          hint={`${cond.overs} overs · powerplay overs 1–${cond.powerplayEnd} · max ${cond.maxBowlerOvers} overs a bowler · ${sel.grade === "1" ? "11 players" : "12 may be nominated"}`}
         >
           <Choice value={sel.grade} onChange={(grade) => set({ grade })} options={[["1", "Grade 1"], ["2", "Grade 2"], ["3", "Grade 3"]]} />
         </Row>
         <Row
           label="Phase"
           hint={
-            sel.phase === "surge"
-              ? "Two overs the batters call from over 11. Only 2 fielders out."
-              : sel.phase === "death"
-                ? "Overs 19–20 are Surge overs unless the Surge was taken earlier."
-                : undefined
+            !isT20
+              ? sel.phase === "powerplay"
+                ? "Only 2 fielders out."
+                : `4 fielders out for every over after the powerplay. Death here means overs ${cond.deathStart}–${cond.overs}.`
+              : sel.phase === "surge"
+                ? "Two overs the batters call from over 11. Only 2 fielders out."
+                : sel.phase === "death"
+                  ? "Overs 19–20 are Surge overs unless the Surge was taken earlier."
+                  : undefined
           }
         >
           <Choice
             value={sel.phase}
             onChange={(phase) => set({ phase })}
-            options={[["powerplay", "Powerplay 1–4"], ["middle", "Middle"], ["surge", "Power Surge"], ["death", "Death"]]}
+            options={rules.phases.map((p) => [p, p === "powerplay" ? `Powerplay 1–${cond.powerplayEnd}` : p === "middle" && !isT20 ? `Middle ${cond.powerplayEnd + 1}–${cond.deathStart - 1}` : p === "death" && !isT20 ? `Death ${cond.deathStart}–${cond.overs}` : PHASE_LABEL[p]] as const)}
           />
         </Row>
         <Row label="Bowler">
@@ -253,13 +265,16 @@ export function FieldScreen(props: { players: Player[]; bowling: BowlingSet[]; u
           <Chip on={sel.setBatter} onClick={() => set({ setBatter: !sel.setBatter, newBatter: false })}>Set batter</Chip>
           <Chip on={sel.needWickets} onClick={() => set({ needWickets: !sel.needWickets, protectRuns: false })}>Need wickets</Chip>
           <Chip on={sel.protectRuns} onClick={() => set({ protectRuns: !sel.protectRuns, needWickets: false })}>Protect runs</Chip>
+          {reverseAvailable && (
+            <Chip on={sel.reverseSwing} onClick={() => set({ reverseSwing: !sel.reverseSwing })}>Old ball reversing</Chip>
+          )}
         </Row>
-        <Row label="Short side" hint={sel.shortSide !== "none" ? "For the batter shown. Flips with the batter's hand." : undefined}>
+        {isT20 && <Row label="Short side" hint={sel.shortSide !== "none" ? "For the batter shown. Flips with the batter's hand." : undefined}>
           <Choice value={sel.shortSide} onChange={(shortSide) => set({ shortSide })} options={[["none", "None"], ["off", "Off side"], ["leg", "Leg side"]]} />
           {sel.shortSide !== "none" && (
             <Chip on={false} onClick={() => set({ shortSide: swap(sel.shortSide) })}>⇄ Switch ends</Chip>
           )}
-        </Row>
+        </Row>}
         {planAvailable && (
           <Row label="Ball plan" hint={sel.ballPlan === "bouncer" ? "One short-pitched ball per over (Rule 19.11)." : undefined}>
             <Choice
